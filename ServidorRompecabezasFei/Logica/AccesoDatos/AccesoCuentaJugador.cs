@@ -1,4 +1,4 @@
-﻿using Datos;
+﻿using Datos.Entidades;
 using System.Linq;
 
 namespace Logica.AccesoDatos
@@ -10,7 +10,7 @@ namespace Logica.AccesoDatos
         {
             CuentaJugador cuentaJugador = null;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 cuentaJugador = (from jugador in contexto.Jugador
                                  join cuenta in contexto.Cuenta
@@ -37,14 +37,14 @@ namespace Logica.AccesoDatos
         {
             bool resultado = false;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
-                Cuenta nuevaCuenta = new Cuenta()
+                Datos.Entidades.Cuenta nuevaCuenta = new Datos.Entidades.Cuenta()
                 {
                     Correo = cuentaJugadorRegistro.Correo,
                     Contrasena = cuentaJugadorRegistro.Contrasena,
                 };
-                Jugador nuevoJugador = new Jugador()
+                Datos.Entidades.Jugador nuevoJugador = new Datos.Entidades.Jugador()
                 {
                     NombreJugador = cuentaJugadorRegistro.NombreJugador,
                     NumeroAvatar = cuentaJugadorRegistro.NumeroAvatar,
@@ -64,7 +64,7 @@ namespace Logica.AccesoDatos
         {
             bool resultado = false;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 var jugadorActual = contexto.Jugador.
                     Where(jugador => jugador.NombreJugador == nombreAnterior).
@@ -85,7 +85,7 @@ namespace Logica.AccesoDatos
         {
             bool resultado = false;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 var jugadorActual = contexto.Jugador.
                     Where(jugador => jugador.NombreJugador == nombreJugador).
@@ -105,7 +105,7 @@ namespace Logica.AccesoDatos
         {
             bool resultado = false;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 var cuentaObtenida = contexto.Cuenta.
                     FirstOrDefault(cuenta => cuenta.Correo == correo);
@@ -125,7 +125,7 @@ namespace Logica.AccesoDatos
         {
             bool resultado = false;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 resultado = (from jugador in contexto.Jugador 
                             where jugador.NombreJugador == nombreJugador 
@@ -139,7 +139,7 @@ namespace Logica.AccesoDatos
         {
             bool resultado = false;
             
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 resultado = (from cuenta in contexto.Cuenta 
                             where cuenta.Correo == correo
@@ -154,7 +154,7 @@ namespace Logica.AccesoDatos
         {
             bool resultado = false;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 resultado = (from cuenta in contexto.Cuenta
                             join jugador in contexto.Jugador

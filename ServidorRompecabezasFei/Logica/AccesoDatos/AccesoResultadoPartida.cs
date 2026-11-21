@@ -1,4 +1,4 @@
-﻿using Datos;
+﻿using Datos.Entidades;
 using System.Linq;
 
 namespace Logica.AccesoDatos
@@ -10,16 +10,16 @@ namespace Logica.AccesoDatos
         {
             bool resultado = false;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
-                Datos.Partida partidaEncontrada = contexto.Partida.
+                Datos.Entidades.Partida partidaEncontrada = contexto.Partida.
                     OrderByDescending(partida => partida.IdPartida).
                     Where(partida => partida.Sala.Codigo == codigoSala).
                     FirstOrDefault();
 
                 if (partidaEncontrada != null)
                 {
-                    ResultadoPartida resultadoPartida = new ResultadoPartida
+                    Datos.Entidades.ResultadoPartida resultadoPartida = new Datos.Entidades.ResultadoPartida
                     {
                         IdPartida = partidaEncontrada.IdPartida,
                         IdJugador = cuentaJugador.IdJugador,

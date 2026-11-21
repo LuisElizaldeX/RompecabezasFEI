@@ -36,9 +36,26 @@ namespace Registros
             {
                 string mensajeFinal = $"{Environment.NewLine}{DateTime.Now} " + 
                     $"- Archivo: [{rutaArchivoActual}], " +
-                    $"- Excepción: {nombreExcepcion}, Mensaje: {ex.Message}";
+                    $"- Excepción: {nombreExcepcion}, Mensaje: {ex.Message}" +
+                    DescribirExcepcionesInternas(ex);
                 escritorTextoPlano.WriteLine(mensajeFinal);
             }
+        }
+
+        // Agrega al registro las excepciones internas, que suelen tener
+        // la causa real (por ejemplo, la de un SmtpException o EntityException)
+        private static string DescribirExcepcionesInternas(Exception ex)
+        {
+            var descripcion = new System.Text.StringBuilder();
+
+            for (Exception interna = ex.InnerException; interna != null;
+                interna = interna.InnerException)
+            {
+                descripcion.Append($"{Environment.NewLine}    -> {interna.GetType().Name}: " +
+                    interna.Message);
+            }
+
+            return descripcion.ToString();
         }
     }
 }

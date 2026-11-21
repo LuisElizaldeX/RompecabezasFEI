@@ -1,6 +1,7 @@
 ﻿using RompecabezasFei.ServicioRompecabezasFei;
 using RompecabezasFei.Servicios;
 using RompecabezasFei.Utilidades;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -106,7 +107,10 @@ namespace RompecabezasFei
 
             if (opcionSeleccionada == MessageBoxResult.Yes)
             {
-                UnirseASala(codigoSala);
+                // Se deja para después de que termine este callback, para no
+                // cerrar la conexión de invitaciones mientras todavía está
+                // atendiendo su propio aviso
+                Dispatcher.BeginInvoke(new Action(() => UnirseASala(codigoSala)));
             }
         }
 
@@ -117,16 +121,31 @@ namespace RompecabezasFei
             if (servicioSala.EstadoOperacion == EstadoOperacion.Correcto)
             {
                 bool esSalaDisponible = servicioSala.ExisteSalaDisponible(codigoSala);
+                // Se guarda el resultado de la consulta ANTES de cerrar, porque
+                // CerrarConexion también cambia EstadoOperacion
+                bool consultaRealizada =
+                    servicioSala.EstadoOperacion == EstadoOperacion.Correcto;
+                // Esta conexión solo servía para preguntar; antes nunca se cerraba
+                servicioSala.CerrarConexion();
 
-                if (servicioSala.EstadoOperacion == EstadoOperacion.Correcto)
+                if (consultaRealizada)
                 {
                     if (esSalaDisponible)
                     {
+                        // Igual que al crear o buscar una sala, primero se dejan de
+                        // recibir invitaciones y se cierra esa conexión
+                        DesactivarInvitacionesDeSala();
                         PaginaSala paginaSala = new PaginaSala(false, codigoSala);
 
                         if (paginaSala.HayConexionConSala)
-                        {                            
+                        {
                             VentanaPrincipal.CambiarPagina(paginaSala);
+                        }
+                        else
+                        {
+                            // Si no se pudo entrar, se recarga el menú para que
+                            // vuelva a abrir su conexión y siga recibiendo invitaciones
+                            VentanaPrincipal.CambiarPagina(new PaginaMenuPrincipal());
                         }
                     }
                     else

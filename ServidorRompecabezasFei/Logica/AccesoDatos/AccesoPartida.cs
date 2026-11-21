@@ -1,22 +1,22 @@
-﻿using Datos;
+﻿using Datos.Entidades;
 using System.Linq;
 
 namespace Logica.AccesoDatos
 {
     public static class AccesoPartida
     {
-        public static bool CrearNuevaPartida(string codigoSala, DificultadPartida dificultad)
+        public static bool CrearNuevaPartida(string codigoSala, Datos.DificultadPartida dificultad)
         {
             bool operacionRealizada = false;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
-                Datos.Sala salaEncontrada = contexto.Sala.FirstOrDefault(
+                Datos.Entidades.Sala salaEncontrada = contexto.Sala.FirstOrDefault(
                     sala => sala.Codigo.Equals(codigoSala));
 
                 if (salaEncontrada != null)
                 {
-                    Datos.Partida nuevaPartida = new Datos.Partida
+                    Datos.Entidades.Partida nuevaPartida = new Datos.Entidades.Partida
                     {
                         Dificultad = dificultad,
                         IdSala = salaEncontrada.IdSala,      
@@ -33,7 +33,7 @@ namespace Logica.AccesoDatos
         {
             int partidasJugadas;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 partidasJugadas = (from jugador in contexto.Jugador
                                    from partidaJugada in contexto.ResultadoPartida
@@ -49,7 +49,7 @@ namespace Logica.AccesoDatos
         {
             int partidasGanadas;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 partidasGanadas = (from partidaJugada in contexto.ResultadoPartida
                                    where partidaJugada.Jugador.NombreJugador.

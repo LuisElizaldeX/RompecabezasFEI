@@ -1,4 +1,4 @@
-﻿using Datos;
+﻿using Datos.Entidades;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -11,7 +11,7 @@ namespace Logica.AccesoDatos
         {
             List<CuentaJugador> amigos = new List<CuentaJugador>();
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 var amigosObtenidos = (from jugador in contexto.Jugador
                                       from amistad in contexto.Amistad
@@ -44,7 +44,7 @@ namespace Logica.AccesoDatos
         {
             bool resultado = false;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 var jugadorA = contexto.Jugador.Where(jugador =>
                     jugador.NombreJugador == nombreJugadorA).FirstOrDefault();
@@ -53,7 +53,7 @@ namespace Logica.AccesoDatos
 
                 if (jugadorA != null && jugadorB != null)
                 {
-                    Amistad amistad = new Amistad
+                    Datos.Entidades.Amistad amistad = new Datos.Entidades.Amistad
                     {
                         IdJugadorA = jugadorA.IdJugador,
                         IdJugadorB = jugadorB.IdJugador
@@ -71,7 +71,7 @@ namespace Logica.AccesoDatos
         {
             bool resultado = false;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 var amistadObtenida = contexto.Amistad.FirstOrDefault(amistad => 
                     amistad.JugadorA.NombreJugador.Equals(nombreJugadorA) &&
@@ -94,7 +94,7 @@ namespace Logica.AccesoDatos
         {
             bool resultado = false;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 resultado = (from amistad in contexto.Amistad
                             where amistad.JugadorA.NombreJugador.

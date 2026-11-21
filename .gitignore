@@ -17,3 +17,6 @@
 /ServidorRompecabezasFei/Servicios/Conexion.config
 /ServidorRompecabezasFei/Datos/Conexion.config
 /ServidorRompecabezasFei/Servidor/Conexion.config
+
+# Secretos locales: nunca deben subirse al repositorio
+secrets.json

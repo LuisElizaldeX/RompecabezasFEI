@@ -1,4 +1,4 @@
-﻿using Datos;
+﻿using Datos.Entidades;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -11,7 +11,7 @@ namespace Logica.AccesoDatos
         {
             bool resultado = false;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 var jugadorOrigen = contexto.Jugador.Where(jugador =>
                     jugador.NombreJugador == nombreJugadorOrigen).FirstOrDefault();
@@ -20,7 +20,7 @@ namespace Logica.AccesoDatos
 
                 if (jugadorOrigen != null && jugadorDestino != null)
                 {
-                    SolicitudAmistad solicitud = new SolicitudAmistad
+                    Datos.Entidades.SolicitudAmistad solicitud = new Datos.Entidades.SolicitudAmistad
                     {
                         IdJugadorOrigen = jugadorOrigen.IdJugador,
                         IdJugadorDestino = jugadorDestino.IdJugador,
@@ -39,7 +39,7 @@ namespace Logica.AccesoDatos
             List<CuentaJugador> jugadoresConSolicitudPendiente =
                 new List<CuentaJugador>();
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 var jugadores = (from solicitud in contexto.SolicitudAmistad
                                  where solicitud.JugadorDestino.NombreJugador.
@@ -64,7 +64,7 @@ namespace Logica.AccesoDatos
         {
             bool resultado = false;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 var solicitudAmistadObtenida = contexto.SolicitudAmistad.
                     FirstOrDefault(solicitud =>
@@ -88,7 +88,7 @@ namespace Logica.AccesoDatos
         {
             bool resultado = false;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
                 resultado = (from solicitud in contexto.SolicitudAmistad
                              where solicitud.JugadorOrigen.NombreJugador.

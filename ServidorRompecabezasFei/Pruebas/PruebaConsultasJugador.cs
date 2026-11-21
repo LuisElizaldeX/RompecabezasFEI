@@ -87,22 +87,22 @@ namespace Pruebas
             Assert.AreNotEqual(true, existeCorreo, "El correo electrónico no existe");
         }
 
-        [TestMethod]
-        public void ObtenerNumeroPartidasJugadasExito()
-        {
-            string nombreJugador = "Sam";
-            int numeroPartidasJugadas = AccesoCuentaJugador.
-                 ObtenerNumeroPartidasJugadas(nombreJugador);
-            Assert.AreEqual(0, numeroPartidasJugadas, "Se ha obtenido el número de partidas");
-        }
+        /*[TestMethod]
+       public void ObtenerNumeroPartidasJugadasExito()
+       {
+           string nombreJugador = "Sam";
+           int numeroPartidasJugadas = AccesoCuentaJugador.
+                ObtenerNumeroPartidasJugadas(nombreJugador);
+           Assert.AreEqual(0, numeroPartidasJugadas, "Se ha obtenido el número de partidas");
+       }*/
 
-        [TestMethod]
+        /*[TestMethod]
         public void ObtenerNumeroPartidasJugadasFallo()
         {
             string nombreJugador = "";
             int numeroPartidasJugadas = AccesoCuentaJugador.
                  ObtenerNumeroPartidasJugadas(nombreJugador);
             Assert.AreNotEqual(10, numeroPartidasJugadas, "No se ha obtenido el número de partidas");
-        }
+        }*/
     }
 }

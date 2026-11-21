@@ -19,11 +19,14 @@ namespace RompecabezasFei
 
             if (servicioSala.EstadoOperacion == EstadoOperacion.Correcto)
             {
-                bool existeSalaDisponible = servicioSala.
-                    ExisteSalaDisponible(cuadroTextoCodigoSala.Text);
+                bool existeSalaDisponible = servicioSala.ExisteSalaDisponible(cuadroTextoCodigoSala.Text);
+                // Se guarda el resultado de la consulta ANTES de cerrar, porque
+                // CerrarConexion también cambia EstadoOperacion
+                bool consultaRealizada =
+                    servicioSala.EstadoOperacion == EstadoOperacion.Correcto;
                 servicioSala.CerrarConexion();
 
-                if (servicioSala.EstadoOperacion == EstadoOperacion.Correcto)
+                if (consultaRealizada)
                 {
                     if (existeSalaDisponible)
                     {

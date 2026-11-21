@@ -1,4 +1,5 @@
-﻿using Datos;
+﻿using Datos.Entidades;
+using Logica;
 
 namespace Logica.AccesoDatos
 {
@@ -8,13 +9,13 @@ namespace Logica.AccesoDatos
         {
             bool resultado = false;
 
-            using (var contexto = new EntidadesRompecabezasFei())
+            using (var contexto = new Datos.EntidadesRompecabezasFei())
             {
-                Datos.Sala nuevaSala = new Datos.Sala
+                Datos.Entidades.Sala nuevaSala = new Datos.Entidades.Sala
                 {
                     Codigo = codigoSala,
-                    MaximoJugadores = Sala.CantidadMaximaJugadores,
-                    MinimoJugadores = Sala.CantidadMinimaJugadoresParaPartida,
+                    MaximoJugadores = Logica.Sala.CantidadMaximaJugadores,
+                    MinimoJugadores = Logica.Sala.CantidadMinimaJugadoresParaPartida,
                 };
                 contexto.Sala.Add(nuevaSala);
                 resultado = contexto.SaveChanges() > 0;

@@ -16,9 +16,9 @@ namespace Servidor
                     servidorRompecabezasFei.Open();
                     Console.WriteLine("Servidor operacional");
                 }
-                catch (AddressAccessDeniedException)
+                catch (AddressAccessDeniedException exception)
                 {
-                    Console.WriteLine("Servidor detenido");
+                    Console.WriteLine("Servidor detenido: " + exception.Message);
                 }
                 Console.ReadLine();
             }

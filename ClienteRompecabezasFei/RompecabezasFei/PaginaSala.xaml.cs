@@ -18,7 +18,7 @@ namespace RompecabezasFei
     {
         private string codigoSala;
 
-        private readonly bool esAnfitrion;
+        private bool esAnfitrion;
 
         private readonly ServicioSala servicioSala;
 
@@ -220,16 +220,16 @@ namespace RompecabezasFei
 
         private void CargarJugadoresEnSalaModificacion()
         {
-            foreach (var jugador in JugadoresEnSala.Where(jugador => 
+            // Se vacía primero para no duplicar jugadores si este método
+            // se llama más de una vez (por ejemplo, al volver a ser anfitrión)
+            JugadoresEnSalaModificacion.Clear();
+
+            // Se agregan los mismos objetos de JugadoresEnSala (no copias),
+            // así conservan su imagen de avatar
+            foreach (var jugador in JugadoresEnSala.Where(jugador =>
                 jugador.NombreJugador != Dominio.CuentaJugador.Actual.NombreJugador))
             {
-                var cuentaJugador = new Dominio.CuentaJugador
-                {
-                    NombreJugador = jugador.NombreJugador,
-                    FuenteImagenAvatar = GeneradorImagenes.
-                    GenerarFuenteImagenAvatar(jugador.NumeroAvatar)
-                };
-                JugadoresEnSalaModificacion.Add(cuentaJugador);
+                JugadoresEnSalaModificacion.Add(jugador);
             }
 
             CargarAmigosDisponibles();
@@ -237,6 +237,8 @@ namespace RompecabezasFei
 
         private void CargarAmigosDisponibles()
         {
+            AmigosDisponibles.Clear();
+
             var amigosRecuperados = servicioSala.
                 ObtenerAmigosDisponibles(Dominio.CuentaJugador.Actual.NombreJugador);
 
@@ -392,17 +394,23 @@ namespace RompecabezasFei
         public void MostrarDesconexionDeJugadorEnSala(string nombreJugadorDesconexion)
         {
             var cuentaJugadorEncontrada = JugadoresEnSala.
-                FirstOrDefault(jugador => jugador.NombreJugador == 
+                FirstOrDefault(jugador => jugador.NombreJugador ==
                 nombreJugadorDesconexion);
 
             if (cuentaJugadorEncontrada != null)
             {
                 JugadoresEnSala.Remove(cuentaJugadorEncontrada);
+            }
 
-                if (esAnfitrion)
-                {
-                    JugadoresEnSalaModificacion.Remove(cuentaJugadorEncontrada); //DEVOLVIO NULL CUANDO ANFITRION SELECCIONADO ABANDONO 
-                }
+            // Se busca por nombre y no por referencia, porque la lista de
+            // modificación puede tener un objeto distinto para el mismo jugador
+            var cuentaEnModificacion = JugadoresEnSalaModificacion.
+                FirstOrDefault(jugador => jugador.NombreJugador ==
+                nombreJugadorDesconexion);
+
+            if (cuentaEnModificacion != null)
+            {
+                JugadoresEnSalaModificacion.Remove(cuentaEnModificacion);
             }
         }
 
@@ -423,6 +431,7 @@ namespace RompecabezasFei
 
         public void MostrarFuncionesDeAnfitrionEnSala()
         {
+            esAnfitrion = true;
             etiquetaModificarJugador.Visibility = Visibility.Visible;
             imagenModificarJugador.Visibility = Visibility.Visible;
             CargarJugadoresEnSalaModificacion();
@@ -436,11 +445,14 @@ namespace RompecabezasFei
 
         private void OcultarFuncionesDeAnfitrionEnSala()
         {
+            esAnfitrion = false;
             etiquetaModificarJugador.Visibility = Visibility.Hidden;
             imagenModificarJugador.Visibility = Visibility.Hidden;
             botonNuevaPartida.Visibility = Visibility.Hidden;
-            JugadoresEnSalaModificacion = null;
-            AmigosDisponibles = null;
+            // Se vacían en lugar de ponerlas en null: así cualquier callback
+            // que llegue después puede usarlas sin lanzar NullReferenceException
+            JugadoresEnSalaModificacion.Clear();
+            AmigosDisponibles.Clear();
 
             if (panelModificacionJugador.IsVisible)
             {
@@ -467,7 +479,12 @@ namespace RompecabezasFei
                     GenerarFuenteImagenAvatar(cuentaAmigo.NumeroAvatar),
                 NombreJugador = cuentaAmigo.NombreJugador
             };
-            AmigosDisponibles.Add(nuevaCuentaAmigo);
+
+            if (esAnfitrion && !AmigosDisponibles.Any(amigo =>
+                amigo.NombreJugador == cuentaAmigo.NombreJugador))
+            {
+                AmigosDisponibles.Add(nuevaCuentaAmigo);
+            }
         }
 
         public void OcultarAmigoNoDisponible(string nombreAmigo)

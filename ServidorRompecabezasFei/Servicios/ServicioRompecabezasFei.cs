@@ -65,7 +65,10 @@ namespace Servicios
                         Registros.Registrador.EscribirRegistro(excepcion);
                     }
 
-                    ReflejarCambiosNombreJugadorActualizado(nombreAnterior, nuevoNombre);
+                    if (operacionRealizada)
+                    {
+                        ReflejarCambiosNombreJugadorActualizado(nombreAnterior, nuevoNombre);
+                    }
                 }
             }
 
@@ -357,7 +360,7 @@ namespace Servicios
                             MostrarSolicitudDeAmistadRecibida(
                             jugadoresActivos[nombreJugadorOrigen]);
                     }
-                    catch (CommunicationObjectAbortedException excepcion)
+                    catch (CommunicationException excepcion)
                     {
                         Registros.Registrador.EscribirRegistro(excepcion);
                     }
@@ -504,18 +507,15 @@ namespace Servicios
 
         public void ActivarNotificacionesDeAmistades(string nombreJugador)
         {
-            jugadoresActivos[nombreJugador].ContextoOperacion = 
-                OperationContext.Current;
-            jugadoresActivos[nombreJugador].TipoInterfazCallback = 
-                typeof(IServicioAmistadesCallback);
-            CambiarEstadoJugador(nombreJugador, EstadoJugador.Disponible);
+            if (AsignarCallbackActual(nombreJugador, typeof(IServicioAmistadesCallback)))
+            {
+                CambiarEstadoJugador(nombreJugador, EstadoJugador.Disponible);
+            }
         }
 
         public void DesactivarNotificacionesDeAmistades(string nombreJugador)
         {
-            jugadoresActivos[nombreJugador].ContextoOperacion = null;
-            jugadoresActivos[nombreJugador].TipoInterfazCallback = 
-                typeof(IServicioJugadorCallback);
+            LiberarCallbackActual(nombreJugador);
         }
     }
     #endregion
@@ -525,19 +525,16 @@ namespace Servicios
     {
         public void ActivarInvitacionesDeSala(string nombreJugador)
         {
-            jugadoresActivos[nombreJugador].ContextoOperacion = 
-                OperationContext.Current;
-            jugadoresActivos[nombreJugador].TipoInterfazCallback =
-                typeof(IServicioInvitacionesCallback);
-            CambiarEstadoJugador(nombreJugador, EstadoJugador.Disponible);
+            if (AsignarCallbackActual(nombreJugador, typeof(IServicioInvitacionesCallback)))
+            {
+                CambiarEstadoJugador(nombreJugador, EstadoJugador.Disponible);
+            }
         }
-        
+
         public void DesactivarInvitacionesDeSala(string nombreJugador)
         {
-            jugadoresActivos[nombreJugador].ContextoOperacion = null;
-            jugadoresActivos[nombreJugador].TipoInterfazCallback =
-                typeof(IServicioJugador);
-        }        
+            LiberarCallbackActual(nombreJugador);
+        }
     }
     #endregion
 
@@ -575,6 +572,44 @@ namespace Servicios
             return operacionRealizada;
         }
 
+        // Devuelve al anfitrión de la sala solo si sigue conectado y está en la
+        // pantalla de sala; en cualquier otro caso devuelve null
+        private CuentaJugador ObtenerAnfitrionEnSala(string codigoSala)
+        {
+            CuentaJugador anfitrion = null;
+
+            if (salas.TryGetValue(codigoSala, out Logica.Sala sala) &&
+                sala.NombreAnfitrion != null &&
+                jugadoresActivos.TryGetValue(sala.NombreAnfitrion,
+                out CuentaJugador cuentaAnfitrion) &&
+                cuentaAnfitrion.TipoInterfazCallback == typeof(IServicioSalaCallback))
+            {
+                anfitrion = cuentaAnfitrion;
+            }
+
+            return anfitrion;
+        }
+
+        // Anfitriones que siguen conectados, están en la pantalla de sala
+        // y son amigos del jugador indicado
+        private List<CuentaJugador> ObtenerAnfitrionesAmigosEnSala(string nombreJugador)
+        {
+            var anfitriones = new List<CuentaJugador>();
+
+            foreach (var nombreAnfitrion in ObtenerNombresDeAnfitrionesEnSala())
+            {
+                if (nombreAnfitrion != null &&
+                    jugadoresActivos.TryGetValue(nombreAnfitrion, out CuentaJugador anfitrion) &&
+                    anfitrion.TipoInterfazCallback == typeof(IServicioSalaCallback) &&
+                    ExisteAmistadConJugador(nombreJugador, nombreAnfitrion))
+                {
+                    anfitriones.Add(anfitrion);
+                }
+            }
+
+            return anfitriones;
+        }
+
         public bool ExisteSalaDisponible(string codigoSala)
         {
             return salas.ContainsKey(codigoSala) && salas[codigoSala].
@@ -602,7 +637,8 @@ namespace Servicios
                     HabilitarRegresoASalaAJugadoresEnPartida(codigoSala);
                 }
 
-                if (ExisteSalaDisponible(codigoSala))
+                if (ExisteSalaDisponible(codigoSala) &&
+                    jugadoresActivos.ContainsKey(nombreJugador))
                 {
                     ActivarNotificacionesDeSala(nombreJugador);
                     CambiarEstadoJugador(nombreJugador, EstadoJugador.EnSala);
@@ -622,17 +658,12 @@ namespace Servicios
 
         public void ActivarNotificacionesDeSala(string nombreJugador)
         {
-            jugadoresActivos[nombreJugador].ContextoOperacion = 
-                OperationContext.Current;
-            jugadoresActivos[nombreJugador].TipoInterfazCallback = 
-                typeof(IServicioSalaCallback);
+            AsignarCallbackActual(nombreJugador, typeof(IServicioSalaCallback));
         }
 
         public void DesactivarNotificacionesDeSala(string nombreJugador)
         {
-            jugadoresActivos[nombreJugador].ContextoOperacion = null;
-            jugadoresActivos[nombreJugador].TipoInterfazCallback =
-                typeof(IServicioJugadorCallback);
+            LiberarCallbackActual(nombreJugador);
         }
 
         public void AbandonarSala(string nombreJugador, string codigoSala)
@@ -656,7 +687,7 @@ namespace Servicios
                         MostrarMensajeDeSala(DateTime.Now.ToShortTimeString() + 
                         $" {nombreJugador}: {mensaje}");
                 }
-                catch(CommunicationObjectAbortedException excepcion)
+                catch(CommunicationException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
@@ -672,45 +703,25 @@ namespace Servicios
             return Guid.NewGuid().ToString();
         }
 
-        public void ConvertirJugadorEnAnfitrionDesdeSala(string nombreJugador, 
-            string codigoSala)
+        public void ConvertirJugadorEnAnfitrionDesdeSala(string nombreJugador, string codigoSala)
         {
-            if (jugadoresActivos[nombreJugador].
-                TipoInterfazCallback == typeof(IServicioSalaCallback))
-            {
-                try
-                {
-                    jugadoresActivos[nombreJugador].ContextoOperacion?.
-                        GetCallbackChannel<IServicioSalaCallback>().
-                        MostrarFuncionesDeAnfitrionEnSala();
-                }
-                catch (CommunicationObjectAbortedException excepcion)
-                {
-                    Registros.Registrador.EscribirRegistro(excepcion);
-                    ElegirNuevoAnfitrion(codigoSala);
-                }
-                catch (InvalidCastException excepcion)
-                {
-                    Registros.Registrador.EscribirRegistro(excepcion);
-                }
-
-                salas[codigoSala].NombreAnfitrion = nombreJugador;
-            }
+            ConvertirJugadorEnAnfitrion(nombreJugador, codigoSala,
+                typeof(IServicioSalaCallback));
         }
 
-        public void InvitarJugador(string nombreJugador, 
+        public void InvitarJugador(string nombreJugador,
             string nombreAnfitrion, string codigoSala)
         {
-            if (jugadoresActivos[nombreJugador].
-                TipoInterfazCallback == typeof(IServicioInvitacionesCallback))
+            if (jugadoresActivos.TryGetValue(nombreJugador, out CuentaJugador jugador) &&
+                jugador.TipoInterfazCallback == typeof(IServicioInvitacionesCallback))
             {
                 try
                 {
-                    jugadoresActivos[nombreJugador].ContextoOperacion?.
+                    jugador.ContextoOperacion?.
                         GetCallbackChannel<IServicioInvitacionesCallback>().
                         MostrarInvitacionDeSala(nombreAnfitrion, codigoSala);
                 }
-                catch (CommunicationObjectAbortedException excepcion) 
+                catch (CommunicationException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
@@ -721,19 +732,20 @@ namespace Servicios
             }
         }
 
-        public void ExpulsarJugadorEnSala(string nombreJugadorExpulsion, 
+        public void ExpulsarJugadorEnSala(string nombreJugadorExpulsion,
             string codigoSala)
         {
-            if (jugadoresActivos[nombreJugadorExpulsion].
-                TipoInterfazCallback == typeof(IServicioSalaCallback))
+            if (jugadoresActivos.TryGetValue(nombreJugadorExpulsion,
+                out CuentaJugador jugadorExpulsado) &&
+                jugadorExpulsado.TipoInterfazCallback == typeof(IServicioSalaCallback))
             {
                 try
                 {
-                    jugadoresActivos[nombreJugadorExpulsion].ContextoOperacion?.
+                    jugadorExpulsado.ContextoOperacion?.
                         GetCallbackChannel<IServicioSalaCallback>().
                         MostrarMensajeExpulsionDeSala();
                 }
-                catch (CommunicationObjectAbortedException excepcion)
+                catch (CommunicationException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
@@ -743,25 +755,9 @@ namespace Servicios
                 }
             }
 
-            salas[codigoSala].RemoverNombreDeJugador(nombreJugadorExpulsion);
-
-            foreach (var jugadorEnSala in ObtenerJugadoresEnSala(codigoSala))
-            {
-                try
-                {
-                    jugadorEnSala.ContextoOperacion?.
-                        GetCallbackChannel<IServicioSalaCallback>().
-                        MostrarDesconexionDeJugadorEnSala(nombreJugadorExpulsion);
-                }
-                catch (CommunicationObjectAbortedException excepcion)
-                {
-                    Registros.Registrador.EscribirRegistro(excepcion);
-                }
-                catch (InvalidCastException excepcion)
-                {
-                    Registros.Registrador.EscribirRegistro(excepcion);
-                }
-            }
+            // RemoverJugadorDeSala ya avisa a los demás jugadores y además
+            // oculta el botón de iniciar partida si quedan menos de 2
+            RemoverJugadorDeSala(nombreJugadorExpulsion, codigoSala);
         }
 
         public List<CuentaJugador> ObtenerAmigosDisponibles(string nombreAnfitrion)
@@ -813,12 +809,9 @@ namespace Servicios
 
         public void UnirseAPartida(string codigoSala, string nombreJugador)
         {
-            jugadoresActivos[nombreJugador].ContextoOperacion = 
-                OperationContext.Current;
-            jugadoresActivos[nombreJugador].TipoInterfazCallback = 
-                typeof(IServicioPartidaCallback);
-
-            if (salas[codigoSala].RemoverNombreDeJugador(nombreJugador))
+            if (AsignarCallbackActual(nombreJugador, typeof(IServicioPartidaCallback)) &&
+                salas.ContainsKey(codigoSala) && salas[codigoSala].HayPartidaCreada &&
+                salas[codigoSala].RemoverNombreDeJugador(nombreJugador))
             {
                 salas[codigoSala].Partida.ConfirmacionesJugadores[nombreJugador] = true;
                 CambiarEstadoJugador(nombreJugador, EstadoJugador.EnPartida);
@@ -838,8 +831,7 @@ namespace Servicios
         {
             RemoverJugadorDePartida(nombreJugador, codigoSala);
             CambiarEstadoJugador(nombreJugador, EstadoJugador.Disponible);
-            jugadoresActivos[nombreJugador].TipoInterfazCallback = 
-                typeof(IServicioJugador);
+            LiberarCallbackActual(nombreJugador);
         }
 
         public void CancelarPartida(string codigoSala)
@@ -853,7 +845,7 @@ namespace Servicios
                         GetCallbackChannel<IServicioPartidaCallback>().
                         MostrarMensajePartidaCancelada();
                 }
-                catch (CommunicationObjectAbortedException excepcion)
+                catch (CommunicationException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
@@ -885,7 +877,7 @@ namespace Servicios
                             GetCallbackChannel<IServicioPartidaCallback>().
                             MostrarTableroDePartida(salas[codigoSala].Partida.Tablero);
                     }
-                    catch (CommunicationObjectAbortedException excepcion)
+                    catch (CommunicationException excepcion)
                     {
                         Registros.Registrador.EscribirRegistro(excepcion);
                     }
@@ -905,7 +897,7 @@ namespace Servicios
                             GetCallbackChannel<IServicioPartidaCallback>().
                             MostrarMensajePartidaCancelada();
                     }
-                    catch (CommunicationObjectAbortedException excepcion)
+                    catch (CommunicationException excepcion)
                     {
                         Registros.Registrador.EscribirRegistro(excepcion);
                     }
@@ -937,7 +929,7 @@ namespace Servicios
                                 GetCallbackChannel<IServicioPartidaCallback>().
                                 MostrarBloqueoDePieza(numeroPieza, nombreJugador);
                         }
-                        catch (CommunicationObjectAbortedException excepcion)
+                        catch (CommunicationException excepcion)
                         {
                             Registros.Registrador.EscribirRegistro(excepcion);
                         }
@@ -965,7 +957,7 @@ namespace Servicios
                         GetCallbackChannel<IServicioPartidaCallback>().
                         MostrarDesbloqueoDePieza(numeroPieza, nombreJugador);
                 }
-                catch (CommunicationObjectAbortedException excepcion)
+                catch (CommunicationException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
@@ -998,7 +990,7 @@ namespace Servicios
                             MostrarColocacionDePieza(numeroPieza, nombreJugador, 
                             puntaje, posicion);
                     }
-                    catch (CommunicationObjectAbortedException excepcion)
+                    catch (CommunicationException excepcion)
                     {
                         Registros.Registrador.EscribirRegistro(excepcion);
                     }
@@ -1050,19 +1042,20 @@ namespace Servicios
             return numeroPartidasGanadas;
         }
 
-        public void ExpulsarJugadorEnPartida(string nombreJugadorExpulsion, 
+        public void ExpulsarJugadorEnPartida(string nombreJugadorExpulsion,
             string codigoSala)
         {
-            if (jugadoresActivos[nombreJugadorExpulsion].
-                TipoInterfazCallback == typeof(IServicioPartidaCallback))
+            if (jugadoresActivos.TryGetValue(nombreJugadorExpulsion,
+                out CuentaJugador jugadorExpulsado) &&
+                jugadorExpulsado.TipoInterfazCallback == typeof(IServicioPartidaCallback))
             {
                 try
                 {
-                    jugadoresActivos[nombreJugadorExpulsion].ContextoOperacion?.
+                    jugadorExpulsado.ContextoOperacion?.
                         GetCallbackChannel<IServicioPartidaCallback>().
                         MostrarMensajeExpulsionDePartida();
                 }
-                catch (CommunicationObjectAbortedException excepcion)
+                catch (CommunicationException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
@@ -1072,80 +1065,16 @@ namespace Servicios
                 }
             }
 
-            salas[codigoSala].Partida.
-                RemoverNombreDeJugador(nombreJugadorExpulsion);            
-            var jugadoresEnPartida = 
-                ObtenerJugadoresConPresenciaConfirmadaEnPartida(codigoSala);
-
-            foreach (var jugadorEnPartida in jugadoresEnPartida)
-            {
-                try
-                {
-                    jugadorEnPartida.ContextoOperacion?.
-                        GetCallbackChannel<IServicioPartidaCallback>().
-                        MostrarDesconexionDeJugadorEnPartida(
-                        nombreJugadorExpulsion);
-                }
-                catch (CommunicationObjectAbortedException excepcion)
-                {
-                    Registros.Registrador.EscribirRegistro(excepcion);
-                }
-                catch (InvalidCastException excepcion)
-                {
-                    Registros.Registrador.EscribirRegistro(excepcion);
-                }
-            }
-            
-            if (!salas[codigoSala].HayCantidadJugadoresMinimaParaPartida())
-            {
-                foreach (var jugadorEnPartida in jugadoresEnPartida.
-                    Where(jugador => jugador.TipoInterfazCallback ==
-                    typeof(IServicioPartidaCallback)))
-                {
-                    try
-                    {
-                        jugadorEnPartida.ContextoOperacion?.
-                            GetCallbackChannel<IServicioPartidaCallback>().
-                            MostrarMensajePartidaCancelada();
-                    }
-                    catch (CommunicationObjectAbortedException excepcion)
-                    {
-                        Registros.Registrador.EscribirRegistro(excepcion);
-                    }
-                    catch (InvalidCastException excepcion)
-                    {
-                        Registros.Registrador.EscribirRegistro(excepcion);
-                    }
-                }
-            }
-
-            CambiarEstadoJugador(nombreJugadorExpulsion, EstadoJugador.Disponible);            
+            // RemoverJugadorDePartida avisa a los demás y cancela la partida
+            // solo si quedan menos jugadores que el mínimo en la partida
+            RemoverJugadorDePartida(nombreJugadorExpulsion, codigoSala);
+            CambiarEstadoJugador(nombreJugadorExpulsion, EstadoJugador.Disponible);
         }
 
-        public void ConvertirJugadorEnAnfitrionDesdePartida(string nombreJugador, 
-            string codigoSala)
+        public void ConvertirJugadorEnAnfitrionDesdePartida(string nombreJugador, string codigoSala)
         {
-            if (jugadoresActivos[nombreJugador].
-                TipoInterfazCallback == typeof(IServicioPartidaCallback))
-            {
-                try
-                {
-                    jugadoresActivos[nombreJugador].ContextoOperacion?.
-                        GetCallbackChannel<IServicioPartidaCallback>().
-                        HabilitarFuncionesDeAnfitrionEnPartida();
-                }
-                catch (CommunicationObjectAbortedException excepcion)
-                {
-                    Registros.Registrador.EscribirRegistro(excepcion);
-                    ElegirNuevoAnfitrion(codigoSala);
-                }
-                catch (InvalidCastException excepcion)
-                {
-                    Registros.Registrador.EscribirRegistro(excepcion);
-                }
-            }
-
-            salas[codigoSala].NombreAnfitrion = nombreJugador;
+            ConvertirJugadorEnAnfitrion(nombreJugador, codigoSala,
+                typeof(IServicioPartidaCallback));
         }
     }
     #endregion
@@ -1153,43 +1082,106 @@ namespace Servicios
     #region Métodos privados
     public partial class ServicioRompecabezasFei
     {
-        private void CambiarEstadoJugador(string nombreJugador, 
-            EstadoJugador nuevoEstado)
+        private void CambiarEstadoJugador(string nombreJugador, EstadoJugador nuevoEstado)
         {
-            EstadoJugador estadoAnterior = jugadoresActivos[nombreJugador].Estado;
-
-            switch (nuevoEstado)
+            // Si el jugador ya no está activo (por ejemplo, se desconectó
+            // mientras se procesaba otra petición) no hay estado que cambiar
+            if (jugadoresActivos.TryGetValue(nombreJugador, out CuentaJugador jugador))
             {
-                case EstadoJugador.Conectado:
-                case EstadoJugador.EnSala:
-                case EstadoJugador.EnPartida:
+                EstadoJugador estadoAnterior = jugador.Estado;
 
-                    if (estadoAnterior == EstadoJugador.Disponible)
-                    {
-                        NotificarAnfitrionesSobreAmigoNoDisponible(nombreJugador);
-                    }
-                    else
-                    {
+                switch (nuevoEstado)
+                {
+                    case EstadoJugador.Conectado:
+                    case EstadoJugador.EnSala:
+                    case EstadoJugador.EnPartida:
+
+                        if (estadoAnterior == EstadoJugador.Disponible)
+                        {
+                            NotificarAnfitrionesSobreAmigoNoDisponible(nombreJugador);
+                        }
+                        else
+                        {
+                            NotificarAmigosSobreCambioEstadoJugador(nombreJugador, nuevoEstado);
+                        }
+
+                        break;
+
+                    case EstadoJugador.Desconectado:
+                        jugadoresActivos.TryRemove(nombreJugador, out _);
                         NotificarAmigosSobreCambioEstadoJugador(nombreJugador, nuevoEstado);
-                    }
+                        break;
 
-                    break;
+                    case EstadoJugador.Disponible:
+                        NotificarAnfitrionesSobreAmigoDisponible(nombreJugador);
+                        NotificarAmigosSobreCambioEstadoJugador(nombreJugador, nuevoEstado);
 
-                case EstadoJugador.Desconectado:
-                    jugadoresActivos.TryRemove(nombreJugador, out _);
-                    NotificarAmigosSobreCambioEstadoJugador(nombreJugador, nuevoEstado);
-                    break;
+                        break;
+                }
 
-                case EstadoJugador.Disponible:
-                    NotificarAnfitrionesSobreAmigoDisponible(nombreJugador);
-                    NotificarAmigosSobreCambioEstadoJugador(nombreJugador, nuevoEstado);
+                if (nuevoEstado != EstadoJugador.Desconectado)
+                {
+                    jugador.Estado = nuevoEstado;
+                }
+            }
+        }
 
-                    break;
+        // Quita la conexión de callbacks del jugador, pero SOLO si la petición
+        // llega por esa misma conexión. Las páginas usan conexiones distintas y
+        // el servidor puede recibir sus peticiones en desorden: sin esta
+        // revisión, el "Desactivar" atrasado de la página anterior podría borrar
+        // la conexión que la página nueva acaba de registrar
+        private void LiberarCallbackActual(string nombreJugador)
+        {
+            if (jugadoresActivos.TryGetValue(nombreJugador, out CuentaJugador jugador) &&
+                jugador.ContextoOperacion?.Channel == OperationContext.Current?.Channel)
+            {
+                jugador.ContextoOperacion = null;
+                jugador.TipoInterfazCallback = typeof(IServicioJugadorCallback);
+            }
+        }
+
+        // Guarda la conexión de la petición actual como la conexión por la que
+        // se le enviarán callbacks al jugador (la de la pantalla que tiene abierta)
+        private bool AsignarCallbackActual(string nombreJugador, Type tipoInterfazCallback)
+        {
+            bool asignacionRealizada = false;
+
+            if (jugadoresActivos.TryGetValue(nombreJugador, out CuentaJugador jugador))
+            {
+                jugador.ContextoOperacion = OperationContext.Current;
+                jugador.TipoInterfazCallback = tipoInterfazCallback;
+                asignacionRealizada = true;
             }
 
-            if (nuevoEstado != EstadoJugador.Desconectado)
+            return asignacionRealizada;
+        }
+
+        private void ConvertirJugadorEnAnfitrion(string nombreJugador,
+            string codigoSala, Type tipoInterfazCallbackEsperado)
+        {
+            if (salas.TryGetValue(codigoSala, out Logica.Sala sala))
             {
-                jugadoresActivos[nombreJugador].Estado = nuevoEstado;
+                bool hayPartidaCreada =
+                    tipoInterfazCallbackEsperado == typeof(IServicioPartidaCallback);
+                bool avisoEntregado =
+                    jugadoresActivos.TryGetValue(nombreJugador, out CuentaJugador jugador) &&
+                    jugador.TipoInterfazCallback == tipoInterfazCallbackEsperado &&
+                    NotificarFuncionesDeAnfitrion(jugador, hayPartidaCreada);
+
+                if (avisoEntregado)
+                {
+                    // Solo se cambia el anfitrión si el jugador elegido
+                    // realmente recibió el aviso
+                    sala.NombreAnfitrion = nombreJugador;
+                }
+                else
+                {
+                    // El anfitrión anterior ya ocultó sus funciones en su pantalla,
+                    // así que hay que elegir a alguien para que la sala
+                    // no se quede sin anfitrión
+                    ElegirNuevoAnfitrion(codigoSala);
+                }
             }
         }
 
@@ -1241,7 +1233,7 @@ namespace Servicios
                             GetCallbackChannel<IServicioSalaCallback>().
                             MostrarDesconexionDeJugadorEnSala(nombreJugador);
                     }
-                    catch (CommunicationObjectAbortedException excepcion)
+                    catch (CommunicationException excepcion)
                     {
                         Registros.Registrador.EscribirRegistro(excepcion);
                     }
@@ -1287,7 +1279,7 @@ namespace Servicios
                             GetCallbackChannel<IServicioPartidaCallback>().
                             MostrarDesconexionDeJugadorEnPartida(nombreJugador);
                     }
-                    catch (CommunicationObjectAbortedException excepcion)
+                    catch (CommunicationException excepcion)
                     {
                         Registros.Registrador.EscribirRegistro(excepcion);
                     }
@@ -1325,7 +1317,7 @@ namespace Servicios
                         GetCallbackChannel<IServicioSalaCallback>().
                         MostrarNuevaPartida();
                 }
-                catch (CommunicationObjectAbortedException excepcion)
+                catch (CommunicationException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
@@ -1338,17 +1330,17 @@ namespace Servicios
 
         private void HabilitarInicioDePartida(string codigoSala)
         {
-            if (jugadoresActivos[salas[codigoSala].NombreAnfitrion].
-                TipoInterfazCallback == typeof(IServicioSalaCallback))
+            CuentaJugador anfitrion = ObtenerAnfitrionEnSala(codigoSala);
+
+            if (anfitrion != null)
             {
                 try
                 {
-                    jugadoresActivos[salas[codigoSala].
-                        NombreAnfitrion].ContextoOperacion?.
+                    anfitrion.ContextoOperacion?.
                         GetCallbackChannel<IServicioSalaCallback>().
                         HabilitarInicioDePartida();
                 }
-                catch (CommunicationObjectAbortedException excepcion)
+                catch (CommunicationException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
@@ -1359,7 +1351,7 @@ namespace Servicios
             }
         }
 
-        private void DeshabilitarInicioDePartida(string codigoSala)
+        private void DeshabilitarInicioDePartida(string codigoSala) //VERIFICAR
         {
             if (jugadoresActivos[salas[codigoSala].NombreAnfitrion].
                 TipoInterfazCallback == typeof(IServicioSalaCallback))
@@ -1371,7 +1363,7 @@ namespace Servicios
                         GetCallbackChannel<IServicioSalaCallback>().
                         DeshabilitarInicioDePartida();
                 }
-                catch (CommunicationObjectAbortedException excepcion)
+                catch (CommunicationException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
@@ -1381,64 +1373,84 @@ namespace Servicios
                 }
             }
         }
-        
+
         private void ElegirNuevoAnfitrion(string codigoSala)
         {
-            if (salas[codigoSala].HayPartidaCreada)
+            if (salas.TryGetValue(codigoSala, out Logica.Sala sala))
             {
-                var nuevoAnfitrionEnPartida = 
-                    ObtenerJugadoresConPresenciaConfirmadaEnPartida(codigoSala).
-                    FirstOrDefault();
-                
+                bool hayPartidaCreada = sala.HayPartidaCreada;
+                List<CuentaJugador> candidatos = hayPartidaCreada ?
+                    ObtenerJugadoresConPresenciaConfirmadaEnPartida(codigoSala) :
+                    ObtenerJugadoresEnSala(codigoSala);
+                CuentaJugador nuevoAnfitrion = null;
+
+                // Se prueba con cada candidato, uno por uno. Si la conexión de
+                // un candidato está muerta, se pasa al siguiente en lugar de
+                // volver a llamar a este método (antes eso causaba recursión
+                // infinita, porque siempre se volvía a elegir al mismo jugador)
+                foreach (var candidato in candidatos)
+                {
+                    if (NotificarFuncionesDeAnfitrion(candidato, hayPartidaCreada))
+                    {
+                        nuevoAnfitrion = candidato;
+                        break;
+                    }
+                }
+
+                // Si ningún candidato pudo recibir el aviso, se asigna al primero
+                // de todos modos. Así, cuando el servidor procese su desconexión,
+                // se volverá a elegir anfitrión entre los que queden
+                if (nuevoAnfitrion == null)
+                {
+                    nuevoAnfitrion = candidatos.FirstOrDefault();
+                }
+
+                if (nuevoAnfitrion != null)
+                {
+                    sala.NombreAnfitrion = nuevoAnfitrion.NombreJugador;
+                }
+            }
+        }
+
+        private bool NotificarFuncionesDeAnfitrion(CuentaJugador candidato,
+    bool hayPartidaCreada)
+        {
+            bool avisoEntregado = false;
+            // Se lee una sola vez para que otro hilo no lo cambie a la mitad
+            OperationContext contexto = candidato.ContextoOperacion;
+
+            if (contexto != null)
+            {
                 try
                 {
-                    nuevoAnfitrionEnPartida?.ContextoOperacion?.
-                        GetCallbackChannel<IServicioPartidaCallback>().
-                        HabilitarFuncionesDeAnfitrionEnPartida();
+                    if (hayPartidaCreada)
+                    {
+                        contexto.GetCallbackChannel<IServicioPartidaCallback>().
+                            HabilitarFuncionesDeAnfitrionEnPartida();
+                    }
+                    else
+                    {
+                        contexto.GetCallbackChannel<IServicioSalaCallback>().
+                            MostrarFuncionesDeAnfitrionEnSala();
+                    }
+
+                    avisoEntregado = true;
                 }
-                catch (CommunicationObjectAbortedException excepcion)
+                catch (CommunicationException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
-                    ElegirNuevoAnfitrion(codigoSala);
+                }
+                catch (TimeoutException excepcion)
+                {
+                    Registros.Registrador.EscribirRegistro(excepcion);
                 }
                 catch (InvalidCastException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
-
-                if (nuevoAnfitrionEnPartida != null)
-                {
-                    salas[codigoSala].NombreAnfitrion =
-                        nuevoAnfitrionEnPartida.NombreJugador;
-                }
             }
-            else
-            {
-                var nuevoAnfitrionEnSala = ObtenerJugadoresEnSala(
-                    codigoSala).FirstOrDefault();
 
-                try
-                {
-                    nuevoAnfitrionEnSala?.ContextoOperacion?.
-                        GetCallbackChannel<IServicioSalaCallback>().
-                        MostrarFuncionesDeAnfitrionEnSala();
-                }
-                catch (CommunicationObjectAbortedException excepcion)
-                {
-                    Registros.Registrador.EscribirRegistro(excepcion);
-                    ElegirNuevoAnfitrion(codigoSala);
-                }
-                catch (InvalidCastException excepcion)
-                {
-                    Registros.Registrador.EscribirRegistro(excepcion);
-                }
-
-                if (nuevoAnfitrionEnSala != null)
-                {
-                    salas[codigoSala].NombreAnfitrion =
-                        nuevoAnfitrionEnSala.NombreJugador;
-                }
-            }
+            return avisoEntregado;
         }
 
         private void EnviarResultadosAJugadores(string codigoSala, 
@@ -1453,7 +1465,7 @@ namespace Servicios
                         GetCallbackChannel<IServicioPartidaCallback>().
                         MostrarResultadosDePartida(nombreJugadorGanador);
                 }
-                catch (CommunicationObjectAbortedException excepcion)
+                catch (CommunicationException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
@@ -1508,21 +1520,19 @@ namespace Servicios
         }
 
         private void NotificarAnfitrionesSobreAmigoDisponible(
-            string nombreJugador)
+    string nombreJugador)
         {
-            foreach (var nombreAnfitrion in ObtenerNombresDeAnfitrionesEnSala().
-                Where(nombreAnfitrion => jugadoresActivos[nombreAnfitrion].
-                TipoInterfazCallback == typeof(IServicioSalaCallback)))
+            if (jugadoresActivos.TryGetValue(nombreJugador, out CuentaJugador amigo))
             {
-                if (ExisteAmistadConJugador(nombreJugador, nombreAnfitrion))
+                foreach (var anfitrion in ObtenerAnfitrionesAmigosEnSala(nombreJugador))
                 {
                     try
                     {
-                        jugadoresActivos[nombreAnfitrion].ContextoOperacion?.
+                        anfitrion.ContextoOperacion?.
                             GetCallbackChannel<IServicioSalaCallback>().
-                            MostrarAmigoDisponible(jugadoresActivos[nombreJugador]);
+                            MostrarAmigoDisponible(amigo);
                     }
-                    catch (CommunicationObjectAbortedException excepcion) 
+                    catch (CommunicationException excepcion)
                     {
                         Registros.Registrador.EscribirRegistro(excepcion);
                     }
@@ -1537,26 +1547,21 @@ namespace Servicios
         private void NotificarAnfitrionesSobreAmigoNoDisponible(
             string nombreJugador)
         {
-            foreach (var nombreAnfitrion in ObtenerNombresDeAnfitrionesEnSala().
-                Where(nombreAnfitrion => jugadoresActivos[nombreAnfitrion].
-                TipoInterfazCallback == typeof(IServicioSalaCallback)))
+            foreach (var anfitrion in ObtenerAnfitrionesAmigosEnSala(nombreJugador))
             {
-                if (ExisteAmistadConJugador(nombreJugador, nombreAnfitrion))
+                try
                 {
-                    try
-                    {
-                        jugadoresActivos[nombreAnfitrion].ContextoOperacion?.
-                            GetCallbackChannel<IServicioSalaCallback>().
-                            OcultarAmigoNoDisponible(nombreJugador);
-                    }
-                    catch (CommunicationObjectAbortedException excepcion) 
-                    {
-                        Registros.Registrador.EscribirRegistro(excepcion);
-                    }
-                    catch (InvalidCastException excepcion)
-                    {
-                        Registros.Registrador.EscribirRegistro(excepcion);
-                    }
+                    anfitrion.ContextoOperacion?.
+                        GetCallbackChannel<IServicioSalaCallback>().
+                        OcultarAmigoNoDisponible(nombreJugador);
+                }
+                catch (CommunicationException excepcion)
+                {
+                    Registros.Registrador.EscribirRegistro(excepcion);
+                }
+                catch (InvalidCastException excepcion)
+                {
+                    Registros.Registrador.EscribirRegistro(excepcion);
                 }
             }
         }
@@ -1613,7 +1618,7 @@ namespace Servicios
                         <IServicioAmistadesCallback>().
                         ActualizarEstadoDeJugador(nombreJugador, estado);
                 }
-                catch (CommunicationObjectAbortedException excepcion)
+                catch (CommunicationException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
@@ -1624,22 +1629,21 @@ namespace Servicios
             }
         }
 
-        private void MostrarNuevoAmigoAJugador(string nombreJugador,
-            string nombreNuevoAmigo)
+        private void MostrarNuevoAmigoAJugador(string nombreJugador, string nombreNuevoAmigo)
         {
-            if (jugadoresActivos.ContainsKey(nombreJugador) &&
-                jugadoresActivos[nombreJugador].TipoInterfazCallback ==
-                typeof(IServicioAmistadesCallback) && 
-                jugadoresActivos[nombreNuevoAmigo] != null)
+            // Antes se usaba jugadoresActivos[nombreNuevoAmigo] != null, pero
+            // el indexador nunca devuelve null: lanza KeyNotFoundException
+            if (jugadoresActivos.TryGetValue(nombreJugador, out CuentaJugador jugador) &&
+                jugador.TipoInterfazCallback == typeof(IServicioAmistadesCallback) &&
+                jugadoresActivos.TryGetValue(nombreNuevoAmigo, out CuentaJugador nuevoAmigo))
             {
                 try
                 {
-                    jugadoresActivos[nombreJugador].ContextoOperacion?.
+                    jugador.ContextoOperacion?.
                         GetCallbackChannel<IServicioAmistadesCallback>().
-                        AgregarAmigoAListaDeAmigos(
-                        jugadoresActivos[nombreNuevoAmigo]);
+                        AgregarAmigoAListaDeAmigos(nuevoAmigo);
                 }
-                catch (CommunicationObjectAbortedException excepcion)
+                catch (CommunicationException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
@@ -1653,17 +1657,16 @@ namespace Servicios
         private void MostrarEliminacionDeAmigoAJugador(string nombreJugador,
             string nombreAmigoEliminacion)
         {
-            if (jugadoresActivos.ContainsKey(nombreJugador) &&
-                jugadoresActivos[nombreJugador].TipoInterfazCallback ==
-                typeof(IServicioAmistadesCallback))
+            if (jugadoresActivos.TryGetValue(nombreJugador, out CuentaJugador jugador) &&
+                jugador.TipoInterfazCallback == typeof(IServicioAmistadesCallback))
             {
                 try
                 {
-                    jugadoresActivos[nombreJugador].ContextoOperacion?.
+                    jugador.ContextoOperacion?.
                         GetCallbackChannel<IServicioAmistadesCallback>().
                         RemoverAmigoDeListaDeAmigos(nombreAmigoEliminacion);
                 }
-                catch (CommunicationObjectAbortedException excepcion)
+                catch (CommunicationException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
@@ -1674,16 +1677,16 @@ namespace Servicios
             }
         }
 
-        private void ReflejarCambiosNombreJugadorActualizado(string nombreAnterior,
-            string nuevoNombre)
+        private void ReflejarCambiosNombreJugadorActualizado(string nombreAnterior, string nuevoNombre)
         {
-            if (jugadoresActivos.ContainsKey(nombreAnterior))
+            // TryRemove saca al jugador y lo devuelve en un solo paso:
+            // si devuelve true, la cuenta ya es nuestra y nadie más la puede quitar
+            if (jugadoresActivos.TryRemove(nombreAnterior,
+                out CuentaJugador cuentaJugadorAntigua))
             {
-                var cuentaJugadorAntigua = jugadoresActivos[nombreAnterior];
                 cuentaJugadorAntigua.NombreJugador = nuevoNombre;
-                jugadoresActivos.TryRemove(nombreAnterior, out _);
-                jugadoresActivos.TryAdd(nuevoNombre, cuentaJugadorAntigua);                
-                
+                jugadoresActivos.TryAdd(nuevoNombre, cuentaJugadorAntigua);
+
                 foreach (var amigo in ObtenerAmigosConectados(nuevoNombre))
                 {
                     MostrarEliminacionDeAmigoAJugador(amigo.NombreJugador, nombreAnterior);
@@ -1695,9 +1698,9 @@ namespace Servicios
         private void ReflejarCambiosNumeroAvatarActualizado(string nombreJugador,
             int nuevoNumeroAvatar)
         {
-            if (jugadoresActivos.ContainsKey(nombreJugador))
+            if (jugadoresActivos.TryGetValue(nombreJugador, out CuentaJugador jugador))
             {
-                jugadoresActivos[nombreJugador].NumeroAvatar = nuevoNumeroAvatar;
+                jugador.NumeroAvatar = nuevoNumeroAvatar;
 
                 foreach (var amigo in ObtenerAmigosConectados(nombreJugador))
                 {
@@ -1709,22 +1712,24 @@ namespace Servicios
 
         private void MostrarNuevoJugadorActivoEnSala(string nombreJugador, string codigoSala)
         {
-            foreach (var jugadorEnSala in ObtenerJugadoresEnSala(codigoSala))
+            if (jugadoresActivos.TryGetValue(nombreJugador, out CuentaJugador nuevoJugador))
             {
-                try
+                foreach (var jugadorEnSala in ObtenerJugadoresEnSala(codigoSala))
                 {
-                    jugadorEnSala.ContextoOperacion?.
-                        GetCallbackChannel<IServicioSalaCallback>().
-                        MostrarNuevoJugadorEnSala(
-                        jugadoresActivos[nombreJugador]);
-                }
-                catch (CommunicationObjectAbortedException excepcion)
-                {
-                    Registros.Registrador.EscribirRegistro(excepcion);
-                }
-                catch (InvalidCastException excepcion)
-                {
-                    Registros.Registrador.EscribirRegistro(excepcion);
+                    try
+                    {
+                        jugadorEnSala.ContextoOperacion?.
+                            GetCallbackChannel<IServicioSalaCallback>().
+                            MostrarNuevoJugadorEnSala(nuevoJugador);
+                    }
+                    catch (CommunicationException excepcion)
+                    {
+                        Registros.Registrador.EscribirRegistro(excepcion);
+                    }
+                    catch (InvalidCastException excepcion)
+                    {
+                        Registros.Registrador.EscribirRegistro(excepcion);
+                    }
                 }
             }
         }
@@ -1740,7 +1745,7 @@ namespace Servicios
                         GetCallbackChannel<IServicioPartidaCallback>().
                         HabilitarOpcionDeRegresoASala();
                 }
-                catch (CommunicationObjectAbortedException excepcion)
+                catch (CommunicationException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
@@ -1793,7 +1798,7 @@ namespace Servicios
                     }
                 }
 
-                jugadoresActivos[jugador.NombreJugador].Puntaje = Pieza.PuntajeVacio;
+                jugador.Puntaje = Pieza.PuntajeVacio;
             }
 
             EnviarResultadosAJugadores(codigoSala, nombreJugadorGanador);
