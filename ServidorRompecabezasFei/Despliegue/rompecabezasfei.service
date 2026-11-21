@@ -1,0 +1,34 @@
+# Servicio de systemd para el servidor de RompecabezasFEI.
+# Copia este archivo a /etc/systemd/system/rompecabezasfei.service
+# (ver DESPLIEGUE-UBUNTU.md).
+
+[Unit]
+Description=Servidor de RompecabezasFEI (CoreWCF, net.tcp)
+# Espera a que la red y PostgreSQL estén listos antes de arrancar
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+# El servidor avisa a systemd cuando ya está escuchando (UseSystemd en Servidor.cs)
+Type=notify
+User=rompecabezas
+Group=rompecabezas
+WorkingDirectory=/opt/rompecabezasfei
+ExecStart=/usr/bin/dotnet /opt/rompecabezasfei/Servidor.dll
+
+# Contraseñas y entorno (archivo con permisos 600, fuera del repositorio)
+EnvironmentFile=/etc/rompecabezasfei/rompecabezasfei.env
+
+# ASP.NET Core guarda unas llaves internas en $HOME; se le da una carpeta propia
+StateDirectory=rompecabezasfei
+Environment=HOME=/var/lib/rompecabezasfei
+Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
+
+# Si el servidor se cae, systemd lo vuelve a levantar a los 5 segundos
+Restart=always
+RestartSec=5
+# Tiempo para cerrar limpiamente con "systemctl stop"
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target

@@ -1,6 +1,6 @@
 ﻿using Logica;
 using System.Collections.Generic;
-using System.ServiceModel;
+using CoreWCF;
 
 namespace Contratos
 {

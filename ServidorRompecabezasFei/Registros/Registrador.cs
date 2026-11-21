@@ -9,6 +9,9 @@ namespace Registros
 {
     public static class Registrador
     {
+        private static readonly string RutaArchivoPredeterminada =
+            Path.Combine("Registros", "Registros.txt");
+
         public static ILog GetLogger([CallerFilePath] string nombreArchivo = "")
         {
             return LogManager.GetLogger(nombreArchivo);
@@ -16,8 +19,12 @@ namespace Registros
 
         public static void EscribirRegistro(Exception ex)
         {
-            string rutaArchivo = ConfigurationManager.AppSettings["Registros"];
-            string path = ConfigurationManager.AppSettings["Directorio"];
+            // Las rutas pueden ser relativas (por ejemplo "Registros/Registros.txt");
+            // en ese caso se toman desde la carpeta donde está el servidor.
+            // Así funciona igual en Windows y en Linux.
+            string rutaArchivo = ResolverRuta(
+                ConfigurationManager.AppSettings["Registros"], RutaArchivoPredeterminada);
+            string path = Path.GetDirectoryName(rutaArchivo);
 
             if (!Directory.Exists(path))
             {
@@ -40,6 +47,15 @@ namespace Registros
                     DescribirExcepcionesInternas(ex);
                 escritorTextoPlano.WriteLine(mensajeFinal);
             }
+        }
+
+        private static string ResolverRuta(string rutaConfigurada, string rutaPredeterminada)
+        {
+            string ruta = string.IsNullOrWhiteSpace(rutaConfigurada) ?
+                rutaPredeterminada : rutaConfigurada;
+
+            return Path.IsPathRooted(ruta) ?
+                ruta : Path.Combine(AppContext.BaseDirectory, ruta);
         }
 
         // Agrega al registro las excepciones internas, que suelen tener
