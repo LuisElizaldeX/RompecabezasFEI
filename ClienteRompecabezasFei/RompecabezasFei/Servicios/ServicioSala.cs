@@ -329,6 +329,50 @@ namespace RompecabezasFei.Servicios
             return jugadoresEnSala;
         }
 
+        public List<string> ObtenerMensajesDeSala(string codigoSala)
+        {
+            List<string> mensajes = new List<string>();
+
+            try
+            {
+                mensajes.AddRange(clienteServicioSala.ObtenerMensajesDeSala(codigoSala));
+                EstadoOperacion = EstadoOperacion.Correcto;
+            }
+            catch (EndpointNotFoundException excepcion)
+            {
+                ManejarExcepcionDeServidor(excepcion);
+            }
+            catch (CommunicationObjectFaultedException excepcion)
+            {
+                ManejarExcepcionDeServidor(excepcion);
+            }
+            catch (CommunicationObjectAbortedException excepcion)
+            {
+                ManejarExcepcionDeServidor(excepcion);
+            }
+            catch (CommunicationException excepcion)
+            {
+                ManejarExcepcionDeServidor(excepcion);
+            }
+            catch (ObjectDisposedException excepcion)
+            {
+                ManejarExcepcionDeServidor(excepcion);
+            }
+            catch (TimeoutException excepcion)
+            {
+                ManejarExcepcionDeServidor(excepcion);
+            }
+            finally
+            {
+                if (EstadoOperacion == EstadoOperacion.Error)
+                {
+                    clienteServicioSala.Abort();
+                }
+            }
+
+            return mensajes;
+        }
+
         public void EnviarMensajeDeSala(string mensaje, string codigoSala)
         {
             try

@@ -952,6 +952,15 @@ namespace RompecabezasFei.Properties {
         }
         
         /// <summary>
+        ///   Busca una cadena traducida similar a Los demás jugadores abandonaron la sala, por lo que no hay jugadores suficientes para crear la partida. Serás regresado a la sala.
+        /// </summary>
+        public static string ETIQUETA_CREACIONPARTIDA_MENSAJEJUGADORESINSUFICIENTES {
+            get {
+                return ResourceManager.GetString("ETIQUETA_CREACIONPARTIDA_MENSAJEJUGADORESINSUFICIENTES", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Busca una cadena traducida similar a ¿Está seguro de que quieres eliminar al jugador de tu lista de amigos?.
         /// </summary>
         public static string ETIQUETA_ELIMINACIONAMIGO_MENSAJE {

@@ -57,9 +57,9 @@
             </ListView>
         </Grid>
 
-        <Grid Background="Black" Opacity="0.8" Name="panelFondoPartida" Visibility="Visible"/>
+        <Grid Background="Black" Opacity="0.8" Name="panelFondoPartida" Visibility="Hidden"/>
 
-        <Grid Margin="72,109,640,360" x:Name="panelAjustesPartida" Visibility="Visible">
+        <Grid Margin="72,109,640,360" x:Name="panelAjustesPartida" Visibility="Hidden">
             <Grid Background="#3D3E3F">
                 <Grid.RenderTransform>
                     <ScaleTransform ScaleX="2" ScaleY="2"/>
@@ -163,7 +163,7 @@
         <Grid Name="panelResultadosPartida" Background="#262626" Visibility="Hidden">
             <Label Content="{x:Static p:Resources.ETIQUETA_RESULTADOS_RESULTADOS}" HorizontalAlignment="Center" Margin="0,10,0,0" VerticalAlignment="Top" Foreground="White" FontSize="48" FontWeight="Bold"/>
             <Button Name="botonRegresarASala" Content="{x:Static p:Resources.BOTON_OPCIONESRESULTADOS_REGRESARASALA}" HorizontalAlignment="Left" Margin="513,574,0,0" VerticalAlignment="Top" Height="72" Width="318" FontSize="36" Background="#FF03A64A" Foreground="White" FontWeight="Bold" Click="IrAPaginaSala" Visibility="Hidden"/>
-            <ListView Name="listaJugadoresResultadoPartida" VerticalAlignment="Top" Foreground="White" Background="#FF4A4A4A" ItemsSource="{Binding Jugadores}" HorizontalContentAlignment="Center" Height="350" Margin="208,122,208,0">
+            <ListView Name="listaJugadoresResultadoPartida" VerticalAlignment="Top" Foreground="White" Background="#FF4A4A4A" HorizontalContentAlignment="Center" Height="350" Margin="208,122,208,0">
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
                         <Style.Triggers>

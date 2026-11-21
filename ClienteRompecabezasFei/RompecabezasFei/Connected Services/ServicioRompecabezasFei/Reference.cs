@@ -1125,6 +1125,12 @@ namespace RompecabezasFei.ServicioRompecabezasFei {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServicioSala/ObtenerJugadoresEnSala", ReplyAction="http://tempuri.org/IServicioSala/ObtenerJugadoresEnSalaResponse")]
         System.Threading.Tasks.Task<RompecabezasFei.ServicioRompecabezasFei.CuentaJugador[]> ObtenerJugadoresEnSalaAsync(string codigoSala);
         
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServicioSala/ObtenerMensajesDeSala", ReplyAction="http://tempuri.org/IServicioSala/ObtenerMensajesDeSalaResponse")]
+        string[] ObtenerMensajesDeSala(string codigoSala);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServicioSala/ObtenerMensajesDeSala", ReplyAction="http://tempuri.org/IServicioSala/ObtenerMensajesDeSalaResponse")]
+        System.Threading.Tasks.Task<string[]> ObtenerMensajesDeSalaAsync(string codigoSala);
+        
         [System.ServiceModel.OperationContractAttribute(IsOneWay=true, Action="http://tempuri.org/IServicioSala/EnviarMensajeDeSala")]
         void EnviarMensajeDeSala(string nombreJugador, string codigoSala, string mensaje);
         
@@ -1276,6 +1282,14 @@ namespace RompecabezasFei.ServicioRompecabezasFei {
         
         public System.Threading.Tasks.Task<RompecabezasFei.ServicioRompecabezasFei.CuentaJugador[]> ObtenerJugadoresEnSalaAsync(string codigoSala) {
             return base.Channel.ObtenerJugadoresEnSalaAsync(codigoSala);
+        }
+        
+        public string[] ObtenerMensajesDeSala(string codigoSala) {
+            return base.Channel.ObtenerMensajesDeSala(codigoSala);
+        }
+        
+        public System.Threading.Tasks.Task<string[]> ObtenerMensajesDeSalaAsync(string codigoSala) {
+            return base.Channel.ObtenerMensajesDeSalaAsync(codigoSala);
         }
         
         public void EnviarMensajeDeSala(string nombreJugador, string codigoSala, string mensaje) {
