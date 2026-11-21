@@ -1,4 +1,4 @@
-# Configuración de la base de datos del servidor
+﻿# Configuración de la base de datos del servidor
 
 La configuración del servidor se lee con `Datos/ConfiguracionServidor.cs`, en este orden
 (cada fuente sobrescribe a la anterior):
@@ -22,10 +22,11 @@ Si no existe:
 
 ## Desarrollo: guardar la contraseña en user secrets
 
-Los user secrets se guardan en tu perfil de Windows, fuera del repositorio:
+Los user secrets se guardan en tu perfil de usuario, fuera del repositorio:
 
 ```
-%APPDATA%\Microsoft\UserSecrets\6a4816e4-f4c8-41ff-9bbd-37bd6a3baf52\secrets.json
+Windows: %APPDATA%\Microsoft\UserSecrets\6a4816e4-f4c8-41ff-9bbd-37bd6a3baf52\secrets.json
+Linux:   ~/.microsoft/usersecrets/6a4816e4-f4c8-41ff-9bbd-37bd6a3baf52/secrets.json
 ```
 
 Opción A, con la CLI de .NET (viene con Visual Studio 2022):
@@ -52,7 +53,14 @@ dotnet user-secrets set --id 6a4816e4-f4c8-41ff-9bbd-37bd6a3baf52 "ConnectionStr
 
 ## Producción: variables de entorno
 
-Los user secrets son solo para desarrollo. En el servidor de producción:
+Los user secrets son solo para desarrollo. En producción las contraseñas van
+en variables de entorno.
+
+**Linux (Ubuntu, con systemd):** van en `/etc/rompecabezasfei/rompecabezasfei.env`.
+Hay un ejemplo en `Despliegue/rompecabezasfei.env.ejemplo`, y la guía completa
+está en [Despliegue/DESPLIEGUE-UBUNTU.md](Despliegue/DESPLIEGUE-UBUNTU.md).
+
+**Windows:**
 
 ```
 setx DOTNET_ENVIRONMENT Production
@@ -64,8 +72,17 @@ variable para tu usuario; si el servidor corre con otra cuenta o como servicio,
 usa `setx /M` desde una consola de administrador. Cierra y vuelve a abrir la
 consola o el servidor para que tome los valores nuevos.)
 
-Antes de publicar, cambia `CAMBIAR_POR_SERVIDOR_DE_PRODUCCION` en
-`Datos/appsettings.Production.json` por el servidor real.
+`Datos/appsettings.Production.json` apunta a un PostgreSQL en el mismo equipo
+(`localhost`). Si la base de datos está en otro equipo, cambia ahí el `Host` o
+sobrescribe la cadena completa con la variable
+`ROMPECABEZAS_ConnectionStrings__EntidadesRompecabezasFei`.
+
+## Puerto del servidor
+
+El servidor escucha en el puerto `8089` (`Servidor:Puerto` en
+`Datos/appsettings.json`). Se puede cambiar con la variable de entorno
+`ROMPECABEZAS_Servidor__Puerto`. Si lo cambias, cambia también el puerto en
+el `App.config` de los clientes.
 
 ## Correo para los códigos de confirmación
 
