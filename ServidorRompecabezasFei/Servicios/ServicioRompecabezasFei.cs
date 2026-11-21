@@ -637,7 +637,15 @@ namespace Servicios
                     HabilitarRegresoASalaAJugadoresEnPartida(codigoSala);
                 }
 
-                if (ExisteSalaDisponible(codigoSala) &&
+                if (jugadoresActivos.ContainsKey(nombreJugador) &&
+                    salas.TryGetValue(codigoSala, out Logica.Sala sala) &&
+                    sala.NombresDeJugadores.ContainsKey(nombreJugador))
+                {
+                    ActivarNotificacionesDeSala(nombreJugador);
+                    CambiarEstadoJugador(nombreJugador, EstadoJugador.EnSala);
+                    operacionRealizada = true;
+                }
+                else if (ExisteSalaDisponible(codigoSala) &&
                     jugadoresActivos.ContainsKey(nombreJugador))
                 {
                     ActivarNotificacionesDeSala(nombreJugador);
@@ -650,7 +658,7 @@ namespace Servicios
                     {
                         HabilitarInicioDePartida(codigoSala);
                     }
-                }                
+                }
             }
 
             return operacionRealizada;
@@ -675,19 +683,26 @@ namespace Servicios
             }
         }
 
-        public void EnviarMensajeDeSala(string nombreJugador, string codigoSala, 
+        public void EnviarMensajeDeSala(string nombreJugador, string codigoSala,
             string mensaje)
         {
+            string mensajeFormateado = DateTime.Now.ToShortTimeString() +
+                $" {nombreJugador}: {mensaje}";
+
+            if (salas.TryGetValue(codigoSala, out Logica.Sala sala))
+            {
+                sala.AgregarMensaje(mensajeFormateado);
+            }
+
             foreach (var jugador in ObtenerJugadoresEnSala(codigoSala))
             {
                 try
                 {
                     jugador.ContextoOperacion?.
                         GetCallbackChannel<IServicioSalaCallback>().
-                        MostrarMensajeDeSala(DateTime.Now.ToShortTimeString() + 
-                        $" {nombreJugador}: {mensaje}");
+                        MostrarMensajeDeSala(mensajeFormateado);
                 }
-                catch(CommunicationException excepcion)
+                catch (CommunicationException excepcion)
                 {
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
@@ -696,6 +711,18 @@ namespace Servicios
                     Registros.Registrador.EscribirRegistro(excepcion);
                 }
             }
+        }
+
+        public List<string> ObtenerMensajesDeSala(string codigoSala)
+        {
+            List<string> mensajes = new List<string>();
+
+            if (salas.TryGetValue(codigoSala, out Logica.Sala sala))
+            {
+                mensajes = sala.ObtenerMensajes();
+            }
+
+            return mensajes;
         }
 
         public string GenerarCodigoParaNuevaSala()
@@ -776,7 +803,15 @@ namespace Servicios
             DificultadPartida dificultad, int numeroImagen)
         {
             bool operacionRealizada = false;
-            
+
+            // Los demás jugadores pudieron salir mientras el anfitrión estaba
+            // en la página de creación, donde no recibe avisos de la sala
+            if (!salas.TryGetValue(codigoSala, out Logica.Sala sala) ||
+                !sala.HayCantidadJugadoresMinimaParaPartida())
+            {
+                return false;
+            }
+
             try
             {
                 operacionRealizada = AccesoPartida.

@@ -1,5 +1,7 @@
 ﻿using Dominio;
 using RompecabezasFei.ServicioRompecabezasFei;
+using RompecabezasFei.Utilidades;
+using System;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -17,6 +19,8 @@ namespace RompecabezasFei
         private int numeroImagenSeleccionada;
         
         private readonly string codigoSala;
+
+        private readonly PaginaSala paginaSala;
         
         private Border bordeImagenSeleccionada;
 
@@ -24,7 +28,7 @@ namespace RompecabezasFei
 
         public ObservableCollection<ImagenRompecabezas> ImagenesRompecabezas { get; set; }
 
-        public PaginaCreacionNuevaPartida(string codigoSala)
+        public PaginaCreacionNuevaPartida(PaginaSala paginaSala)
         {
             InitializeComponent();
             ImagenesRompecabezas = new ObservableCollection<ImagenRompecabezas>();
@@ -33,7 +37,20 @@ namespace RompecabezasFei
             cuadroSeleccionDificultad.SelectedIndex = (int)dificultadSeleccionada;
             numeroImagenSeleccionada = NumeroImagenInicial;
             galeriaImagenesRompecabezas.DataContext = this;
-            this.codigoSala = codigoSala;
+            this.paginaSala = paginaSala;
+            codigoSala = paginaSala.CodigoSala;
+            paginaSala.JugadoresInsuficientesParaPartida += CancelarCreacionDePartida;
+        }
+
+        // La sala avisa que los demás jugadores se fueron: se cancela la
+        // creación y el anfitrión regresa a la sala, igual que dentro de la partida
+        private void CancelarCreacionDePartida(object objetoOrigen, EventArgs evento)
+        {
+            paginaSala.JugadoresInsuficientesParaPartida -= CancelarCreacionDePartida;
+            GestorCuadroDialogo.MostrarAdvertencia(
+                Properties.Resources.ETIQUETA_CREACIONPARTIDA_MENSAJEJUGADORESINSUFICIENTES,
+                Properties.Resources.ETIQUETA_PARTIDA_PARTIDACANCELADA);
+            VentanaPrincipal.CambiarPagina(paginaSala);
         }
 
         private void MostrarImagenesDeRompecabezas()
@@ -95,7 +112,7 @@ namespace RompecabezasFei
         private void IrAPaginaSala(object objetoOrigen, 
             MouseButtonEventArgs evento)
         {
-            PaginaSala paginaSala = new PaginaSala(true, codigoSala);
+            paginaSala.JugadoresInsuficientesParaPartida -= CancelarCreacionDePartida;
             VentanaPrincipal.CambiarPagina(paginaSala);
         }
 
@@ -109,9 +126,20 @@ namespace RompecabezasFei
         private void IrAPaginaPartida(object objetoOrigen, 
             RoutedEventArgs evento)
         {
+            paginaSala.JugadoresInsuficientesParaPartida -= CancelarCreacionDePartida;
             PaginaPartida paginaPartida = new PaginaPartida(codigoSala, 
                 dificultadSeleccionada, numeroImagenSeleccionada);
-            VentanaPrincipal.CambiarPagina(paginaPartida);
+
+            if (paginaPartida.HayConexionConPartida)
+            {
+                paginaSala.CerrarConexionDeSala();
+                VentanaPrincipal.CambiarPagina(paginaPartida);
+            }
+            else
+            {
+                // PaginaPartida ya mostró el aviso de que no se pudo crear
+                VentanaPrincipal.CambiarPagina(paginaSala);
+            }
         }
     }
 }

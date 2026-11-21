@@ -29,6 +29,9 @@ namespace Contratos
         void EnviarMensajeDeSala(string nombreJugador, string codigoSala, string mensaje);
 
         [OperationContract]
+        List<string> ObtenerMensajesDeSala(string codigoSala);
+
+        [OperationContract]
         string GenerarCodigoParaNuevaSala();
         
         [OperationContract]

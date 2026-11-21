@@ -27,7 +27,9 @@ namespace RompecabezasFei
         private const int CantidadJugadoresMinimosParaIniciarPartida = 2;
 
         public bool HayConexionConSala { get; set; }
-        
+
+        public event EventHandler JugadoresInsuficientesParaPartida;
+
         public ObservableCollection<Dominio.CuentaJugador> JugadoresEnSala { get; set; }
 
         public ObservableCollection<Dominio.CuentaJugador> 
@@ -166,17 +168,21 @@ namespace RompecabezasFei
             }
         }
 
-        private void IrAPaginaCreacionNuevaPartida(object objetoOrigen, 
+        private void IrAPaginaCreacionNuevaPartida(object objetoOrigen,
             RoutedEventArgs evento)
         {
-            servicioSala.DesactivarNotificacionesDeSala(
-                Dominio.CuentaJugador.Actual.NombreJugador);
+            // La sala sigue recibiendo avisos (chat, jugadores que entran o
+            // salen) mientras el anfitrión está en la página de creación, para
+            // poder avisarle si los demás se van. Al regresar se vuelve a esta
+            // misma página, así que el chat y la lista se conservan
+            VentanaPrincipal.CambiarPagina(new PaginaCreacionNuevaPartida(this));
+        }
 
-            if (servicioSala.EstadoOperacion == EstadoOperacion.Correcto) 
-            {
-                VentanaPrincipal.CambiarPagina(
-                    new PaginaCreacionNuevaPartida(CodigoSala));
-            }
+        // Se llama cuando el anfitrión ya pasó a la partida: esta conexión
+        // de sala ya no se usa
+        public void CerrarConexionDeSala()
+        {
+            servicioSala.CerrarConexion();
         }
 
         private void UnirseASala()
@@ -189,6 +195,7 @@ namespace RompecabezasFei
                 if (HayConexionConSala)
                 {
                     CargarJugadoresEnSala();
+                    CargarMensajesDeSala();
                 }
                 else
                 {
@@ -196,6 +203,21 @@ namespace RompecabezasFei
                         Properties.Resources.ETIQUETA_UNIRSESALA_MENSAJESALANODISPONIBLE,
                         Properties.Resources.ETIQUETA_UNIRSESALA_SALANODISPONIBLE);
                     servicioSala.CerrarConexion();
+                }
+            }
+        }
+
+        // Muestra los mensajes que se enviaron antes de entrar (o mientras el
+        // anfitrión estaba en la página de creación de partida)
+        private void CargarMensajesDeSala()
+        {
+            var mensajes = servicioSala.ObtenerMensajesDeSala(CodigoSala);
+
+            if (servicioSala.EstadoOperacion == EstadoOperacion.Correcto)
+            {
+                foreach (string mensaje in mensajes)
+                {
+                    cuadroTextoChatDeSala.AppendText(mensaje + "\n");
                 }
             }
         }
@@ -469,6 +491,7 @@ namespace RompecabezasFei
         public void DeshabilitarInicioDePartida()
         {
             botonNuevaPartida.Visibility = Visibility.Hidden;
+            JugadoresInsuficientesParaPartida?.Invoke(this, EventArgs.Empty);
         }
 
         public void MostrarAmigoDisponible(CuentaJugador cuentaAmigo)

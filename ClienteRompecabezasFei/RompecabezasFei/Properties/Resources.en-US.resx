@@ -414,6 +414,9 @@
   <data name="ETIQUETA_CREACIONPARTIDA_MENSAJEERRORCREACIONPARTIDA" xml:space="preserve">
     <value>The game could not be created correctly</value>
   </data>
+  <data name="ETIQUETA_CREACIONPARTIDA_MENSAJEJUGADORESINSUFICIENTES" xml:space="preserve">
+    <value>The other players left the room, so there are not enough players to create the game. You will be taken back to the room</value>
+  </data>
   <data name="ETIQUETA_ELIMINACIONAMIGO_MENSAJE" xml:space="preserve">
     <value>Are you sure you want to remove the player from your friends list?</value>
   </data>

@@ -92,6 +92,7 @@ namespace RompecabezasFei
             {
                 if (hayPartidaCreada)
                 {
+                    HayConexionConPartida = true;
                     UnirseAPartida(Dominio.CuentaJugador.Actual.NombreJugador);
                 }
                 else
@@ -576,15 +577,21 @@ namespace RompecabezasFei
             hayPartidaFinalizada = true;
             panelFondoPartida.Visibility = Visibility.Visible;
             panelResultadosPartida.Visibility = Visibility.Visible;
-            
+
+            // Los puntajes se fueron sumando en JugadoresEnPartida durante la partida.
+            // Se crea una lista nueva, ordenada de mayor a menor, para que la tabla
+            // muestre los valores finales
+            listaJugadoresResultadoPartida.ItemsSource = JugadoresEnPartida.
+                OrderByDescending(jugador => jugador.Puntaje).ToList();
+
             if (!string.IsNullOrEmpty(nombreJugadorGanador))
             {
-                etiquetaAJustesPartida.Content = nombreJugadorGanador + " " +
+                etiquetaJugadorGanador.Content = nombreJugadorGanador + " " +
                     Properties.Resources.ETIQUETA_RESULTADOS_MENSAJEGANADOR;
             }
             else
             {
-                etiquetaAJustesPartida.Content = Properties.Resources.
+                etiquetaJugadorGanador.Content = Properties.Resources.
                     ETIQUETA_RESULTADOSPARTIDA_MENSAJEEMPATE;
             }
 

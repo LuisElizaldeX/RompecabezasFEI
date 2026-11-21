@@ -414,6 +414,9 @@
   <data name="ETIQUETA_CREACIONPARTIDA_MENSAJEERRORCREACIONPARTIDA" xml:space="preserve">
     <value>La partida no pudo ser creada correctamente</value>
   </data>
+  <data name="ETIQUETA_CREACIONPARTIDA_MENSAJEJUGADORESINSUFICIENTES" xml:space="preserve">
+    <value>Los demás jugadores abandonaron la sala, por lo que no hay jugadores suficientes para crear la partida. Serás regresado a la sala</value>
+  </data>
   <data name="ETIQUETA_ELIMINACIONAMIGO_MENSAJE" xml:space="preserve">
     <value>¿Está seguro de que quieres eliminar al jugador de tu lista de amigos?</value>
   </data>

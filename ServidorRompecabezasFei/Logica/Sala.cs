@@ -1,4 +1,6 @@
 ﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 
 namespace Logica
@@ -11,6 +13,11 @@ namespace Logica
         public const int CantidadMinimaJugadoresParaPartida = 2;
         
         public const int CantidadJugadoresVacia = 0;
+
+        public const int MaximoMensajesHistorial = 100;
+
+        private readonly ConcurrentQueue<string> historialMensajes =
+            new ConcurrentQueue<string>();
 
         public bool HayPartidaCreada { get; set; }
 
@@ -35,6 +42,23 @@ namespace Logica
         public bool HayCantidadJugadoresMinimaParaPartida()
         {
             return ContadorJugadores >= CantidadMinimaJugadoresParaPartida;
+        }
+
+        // Guarda el mensaje del chat y conserva solo los últimos
+        // MaximoMensajesHistorial, para que quien regrese a la sala los vea
+        public void AgregarMensaje(string mensaje)
+        {
+            historialMensajes.Enqueue(mensaje);
+
+            while (historialMensajes.Count > MaximoMensajesHistorial &&
+                historialMensajes.TryDequeue(out _))
+            {
+            }
+        }
+
+        public List<string> ObtenerMensajes()
+        {
+            return historialMensajes.ToList();
         }
 
         public bool AgregarNombreDeJugador(string nombreJugador)
