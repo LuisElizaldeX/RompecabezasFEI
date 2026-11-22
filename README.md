@@ -10,7 +10,7 @@ y gana quien termina con más puntos.
 |---|---|
 | **Lenguaje** | C# |
 | **Cliente** | WPF sobre .NET Framework 4.7.2 (Windows) |
-| **Servidor** | .NET 8 con [CoreWCF](https://github.com/CoreWCF/CoreWCF), que corre en Windows y en Linux |
+| **Servidor** | .NET 10 con [CoreWCF](https://github.com/CoreWCF/CoreWCF), que corre en Windows y en Linux |
 | **Comunicación** | WCF `netTcpBinding` duplex (callbacks), puerto 8089 |
 | **Base de datos** | PostgreSQL, con Entity Framework 6 y Npgsql |
 | **Registros** | log4net |
@@ -38,7 +38,7 @@ PostgreSQL.
 
 ```
 ┌──────────────────────┐                     ┌──────────────────────────────────┐
-│ Cliente WPF (Windows)│  peticiones  ───►   │ Servidor (.NET 8 + CoreWCF)      │
+│ Cliente WPF (Windows)│  peticiones  ───►   │ Servidor (.NET 10 + CoreWCF)      │
 │  Páginas XAML        │                     │  Servicios ── Logica ── Datos ───┼──► PostgreSQL
 │  Servicios (proxies) │  ◄───  callbacks    │  (estado en memoria: jugadores,  │
 └──────────────────────┘  net.tcp :8089      │   salas y partidas)              │
@@ -95,7 +95,7 @@ RompecabezasFEI/
 │   ├── Registros/                   Registro de errores (log4net)
 │   └── Pruebas/                     Pruebas del cliente
 │
-├── ServidorRompecabezasFei/         Servidor (.NET 8 + CoreWCF)
+├── ServidorRompecabezasFei/         Servidor (.NET 10 + CoreWCF)
 │   ├── Servidor/                    Programa principal: levanta CoreWCF en el puerto 8089
 │   ├── Servicios/                   ServicioRompecabezasFei: implementa los 6 contratos
 │   ├── Contratos/                   Interfaces WCF (IServicio*) y sus callbacks
@@ -105,7 +105,7 @@ RompecabezasFEI/
 │   ├── Pruebas/                     Pruebas con MSTest
 │   ├── Despliegue/                  Guía y archivos para instalarlo en Ubuntu con systemd
 │   ├── CONFIGURACION.md             Configuración, contraseñas y entornos
-│   ├── Directory.Build.props        Propiedades comunes (net8.0)
+│   ├── Directory.Build.props        Propiedades comunes (net10.0)
 │   └── Directory.Packages.props     Versiones de los paquetes NuGet
 │
 └── Herramientas/
@@ -124,8 +124,8 @@ Servidor ──► Servicios ──► Contratos ──► Logica ──► Dato
 
 ### Servidor
 
-Necesitas el [SDK de .NET 8](https://dotnet.microsoft.com/download/dotnet/8.0),
-que viene con Visual Studio 2022 17.8 o más nuevo, y PostgreSQL.
+Necesitas el [SDK de .NET 10](https://dotnet.microsoft.com/download/dotnet/10.0),
+que viene con Visual Studio 2026 o más nuevo, y PostgreSQL.
 
 1. Crea la base de datos con el script SQL. Las instrucciones están en
    [CONFIGURACION.md](ServidorRompecabezasFei/CONFIGURACION.md).

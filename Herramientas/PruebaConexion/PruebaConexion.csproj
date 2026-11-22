@@ -3,7 +3,7 @@
        que el servidor responde y que los callbacks funcionan. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>disable</Nullable>
     <NoWarn>$(NoWarn);CS0618</NoWarn>
   </PropertyGroup>

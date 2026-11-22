@@ -19,7 +19,7 @@ namespace Servidor
     // Punto de entrada del servidor de RompecabezasFEI.
     //
     // Antes (.NET Framework) el servicio se levantaba con ServiceHost y su
-    // configuración vivía en App.config. Ahora (.NET 8) se usa CoreWCF, que
+    // configuración vivía en App.config. Ahora (.NET 10) se usa CoreWCF, que
     // corre igual en Windows y en Linux, y la configuración se hace aquí en código.
     //
     // Los clientes no cambian: siguen conectándose por net.tcp a

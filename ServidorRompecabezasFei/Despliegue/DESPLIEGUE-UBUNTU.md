@@ -1,13 +1,13 @@
 # Desplegar el servidor en Ubuntu (homelab)
 
 Esta guía instala el servidor de RompecabezasFEI en un equipo con Ubuntu
-22.04 o 24.04, para jugar en la red local desde varios equipos con Windows.
+24.04 o 26.04, para jugar en la red local desde varios equipos con Windows.
 Todo se hace por SSH, con comandos que puedes copiar y pegar.
 
 ```
  Equipo Windows (cliente)  ─┐
  Equipo Windows (cliente)  ─┼──  red local  ──►  Ubuntu (homelab)
- Equipo Windows (cliente)  ─┘   net.tcp 8089      ├─ Servidor .NET 8 (systemd)
+ Equipo Windows (cliente)  ─┘   net.tcp 8089      ├─ Servidor .NET 10 (systemd)
                                                   └─ PostgreSQL (solo local)
 ```
 
@@ -81,19 +81,19 @@ sudo netplan try     # si en 120 s no confirmas, regresa a la configuración ant
 > Cuidado: si te equivocas aquí puedes perder la conexión SSH. `netplan try`
 > te protege porque deshace el cambio si no lo confirmas.
 
-## 3. Instalar .NET 8 y PostgreSQL
+## 3. Instalar .NET 10 y PostgreSQL
 
 ```bash
 sudo apt update
-sudo apt install -y aspnetcore-runtime-8.0 postgresql git
-dotnet --list-runtimes     # debe mostrar Microsoft.AspNetCore.App 8.0.x
+sudo apt install -y aspnetcore-runtime-10.0 postgresql git
+dotnet --list-runtimes     # debe mostrar Microsoft.AspNetCore.App 10.0.x
 ```
 
 Si vas a compilar el servidor en el propio Ubuntu (paso 5, opción A), instala
 también el SDK:
 
 ```bash
-sudo apt install -y dotnet-sdk-8.0
+sudo apt install -y dotnet-sdk-10.0
 ```
 
 ## 4. Crear la base de datos
@@ -123,7 +123,7 @@ dotnet publish Servidor/Servidor.csproj -c Release -o ~/rompecabezasfei-publicad
 
 ### Opción B: compilar en Windows y copiar por SSH
 
-En Windows, con el SDK de .NET 8 (viene con Visual Studio 2022 17.8 o más nuevo):
+En Windows, con el SDK de .NET 10 (viene con Visual Studio 2026 o más nuevo):
 
 ```powershell
 cd ServidorRompecabezasFei
@@ -235,7 +235,7 @@ Test-NetConnection 192.168.1.50 -Port 8089      # TcpTestSucceeded : True
 ```
 
 Para probar también los callbacks sin abrir el juego, usa la herramienta del
-repositorio (necesita el SDK de .NET 8):
+repositorio (necesita el SDK de .NET 10):
 
 ```powershell
 cd Herramientas\PruebaConexion

@@ -29,7 +29,7 @@ Windows: %APPDATA%\Microsoft\UserSecrets\6a4816e4-f4c8-41ff-9bbd-37bd6a3baf52\se
 Linux:   ~/.microsoft/usersecrets/6a4816e4-f4c8-41ff-9bbd-37bd6a3baf52/secrets.json
 ```
 
-Opción A, con la CLI de .NET (viene con Visual Studio 2022):
+Opción A, con la CLI de .NET (viene con Visual Studio):
 
 ```
 dotnet user-secrets set --id 6a4816e4-f4c8-41ff-9bbd-37bd6a3baf52 "BaseDatos:Contrasena" "tu_contraseña"
