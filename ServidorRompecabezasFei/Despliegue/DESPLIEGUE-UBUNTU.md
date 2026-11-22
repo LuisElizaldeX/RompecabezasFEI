@@ -282,4 +282,6 @@ sudo systemctl start rompecabezasfei
 | `No se encontró la cadena de conexión` | `DOTNET_ENVIRONMENT` en el archivo `.env` y `Datos/appsettings.Production.json` |
 | `password authentication failed for user "rompecabezasuser"` | La contraseña en `/etc/rompecabezasfei/rompecabezasfei.env` |
 | No llegan los correos de confirmación | `ROMPECABEZAS_Correo__Contrasena` debe ser una contraseña de aplicación de Gmail |
+| `log4net:ERROR Could not create Appender [ArchivoRegistro]` al probar a mano | No impide jugar. `/tmp/.dotnet` lo creó otro usuario; con el servicio (`PrivateTmp=true`) desaparece |
+| `Test-NetConnection` da `False` | Usa la IP real (`ip -brief address`), no la del ejemplo, y revisa que la regla de `ufw` tenga el rango de tu red |
 | Errores del juego | `journalctl -u rompecabezasfei` y los archivos en `/opt/rompecabezasfei/Registros/` |

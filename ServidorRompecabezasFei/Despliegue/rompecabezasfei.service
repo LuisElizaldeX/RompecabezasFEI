@@ -24,6 +24,10 @@ StateDirectory=rompecabezasfei
 Environment=HOME=/var/lib/rompecabezasfei
 Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
 
+# /tmp propio para el servicio. .NET guarda ahí los mutex con nombre que usa
+# log4net; si otro usuario ya creó /tmp/.dotnet, el registro en archivo falla
+PrivateTmp=true
+
 # Si el servidor se cae, systemd lo vuelve a levantar a los 5 segundos
 Restart=always
 RestartSec=5
