@@ -680,6 +680,12 @@ namespace RompecabezasFei.ServicioRompecabezasFei {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServicioJugador/ExisteNombreJugadorRegistrado", ReplyAction="http://tempuri.org/IServicioJugador/ExisteNombreJugadorRegistradoResponse")]
         System.Threading.Tasks.Task<bool> ExisteNombreJugadorRegistradoAsync(string nombreJugador);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServicioJugador/ComprobarConexion", ReplyAction="http://tempuri.org/IServicioJugador/ComprobarConexionResponse")]
+        bool ComprobarConexion();
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServicioJugador/ComprobarConexion", ReplyAction="http://tempuri.org/IServicioJugador/ComprobarConexionResponse")]
+        System.Threading.Tasks.Task<bool> ComprobarConexionAsync();
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
@@ -771,6 +777,14 @@ namespace RompecabezasFei.ServicioRompecabezasFei {
         
         public System.Threading.Tasks.Task<bool> ExisteNombreJugadorRegistradoAsync(string nombreJugador) {
             return base.Channel.ExisteNombreJugadorRegistradoAsync(nombreJugador);
+        }
+        
+        public bool ComprobarConexion() {
+            return base.Channel.ComprobarConexion();
+        }
+        
+        public System.Threading.Tasks.Task<bool> ComprobarConexionAsync() {
+            return base.Channel.ComprobarConexionAsync();
         }
     }
     
