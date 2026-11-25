@@ -151,6 +151,11 @@ namespace Servicios
             return hayExistencias;
         }
 
+        public bool ComprobarConexion()
+        {
+            return true;
+        }
+
         public CuentaJugador IniciarSesionComoJugador(string nombreJugador, 
             string contrasena)
         {            
