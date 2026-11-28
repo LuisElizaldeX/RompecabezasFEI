@@ -127,6 +127,17 @@ namespace RompecabezasFei.Servicios
                     cliente.ComprobarConexion();
                 }
             }
+            catch (ActionNotSupportedException excepcion)
+            {
+                // El servidor respondió, pero no conoce ComprobarConexion porque
+                // tiene una versión anterior. La conexión sigue viva: se registra
+                // y se dejan de hacer comprobaciones, en lugar de desconectar
+                ManejarServidorSinComprobacion(excepcion);
+            }
+            catch (FaultException excepcion)
+            {
+                ManejarServidorSinComprobacion(excepcion);
+            }
             catch (CommunicationException excepcion)
             {
                 ManejarFalloDeComprobacion(cliente, excepcion);
@@ -143,6 +154,12 @@ namespace RompecabezasFei.Servicios
             {
                 Interlocked.Exchange(ref hayComprobacionEnCurso, 0);
             }
+        }
+
+        private static void ManejarServidorSinComprobacion(Exception excepcion)
+        {
+            Registros.Registrador.EscribirRegistro(excepcion);
+            DetenerComprobacionDeConexion();
         }
 
         private static void ManejarFalloDeComprobacion(ServicioJugadorClient cliente,
