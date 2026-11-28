@@ -1,0 +1,24 @@
+<Project>
+  <!-- Versiones de los paquetes NuGet en un solo lugar -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="CoreWCF.Primitives" Version="1.9.2" />
+    <PackageVersion Include="CoreWCF.NetTcp" Version="1.9.2" />
+    <PackageVersion Include="EntityFramework" Version="6.5.1" />
+    <PackageVersion Include="EntityFramework6.Npgsql" Version="6.4.3" />
+    <PackageVersion Include="Npgsql" Version="4.1.13" />
+    <PackageVersion Include="log4net" Version="3.3.0" />
+    <PackageVersion Include="System.Configuration.ConfigurationManager" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Systemd" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageVersion Include="MSTest.TestAdapter" Version="3.6.4" />
+    <PackageVersion Include="MSTest.TestFramework" Version="3.6.4" />
+  </ItemGroup>
+</Project>

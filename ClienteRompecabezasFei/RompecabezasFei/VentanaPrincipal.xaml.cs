@@ -13,10 +13,18 @@ namespace RompecabezasFei
 
         public static ServicioJugador ServicioJugador { get; set; }
 
+        // Indica que el usuario está cerrando el juego, para no mostrarle
+        // avisos de conexión perdida en ese momento
+        public static bool EstaCerrandose { get; private set; }
+
         public VentanaPrincipal()
         {
             InitializeComponent();
-            Closing += (objetoOrigen, evento) => CerrarSesion();
+            Closing += (objetoOrigen, evento) =>
+            {
+                EstaCerrandose = true;
+                CerrarSesion();
+            };
             ServicioJugador = new ServicioJugador();
             PaginaActual = new PaginaInicioSesion();
             marcoPaginaActual.Navigate(PaginaActual);

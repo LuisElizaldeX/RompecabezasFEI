@@ -6,9 +6,9 @@ using Logica.Enumeraciones;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Data;
+using System.Data.Entity.Core;
 using System.Linq;
-using System.ServiceModel;
+using CoreWCF;
 
 namespace Servicios
 {    
@@ -151,6 +151,11 @@ namespace Servicios
             return hayExistencias;
         }
 
+        public bool ComprobarConexion()
+        {
+            return true;
+        }
+
         public CuentaJugador IniciarSesionComoJugador(string nombreJugador, 
             string contrasena)
         {            
@@ -178,7 +183,7 @@ namespace Servicios
                         OperationContext.Current;
                     cuentaRecuperada.TipoInterfazCallback = 
                         typeof(IServicioJugadorCallback);
-                    cuentaRecuperada.ContextoOperacionConexion.Channel.Faulted += 
+                    cuentaRecuperada.ContextoOperacionConexion.ObtenerCanal().Faulted += 
                         (objetoOrigen, evento) => 
                         CerrarSesion(cuentaRecuperada.NombreJugador);
                     jugadoresActivos.TryAdd(cuentaRecuperada.
@@ -208,7 +213,7 @@ namespace Servicios
                         TipoInterfazCallback = typeof(IServicioJugadorCallback)
                     };
                     cuentaInvitado.ContextoOperacionConexion.
-                        Channel.Faulted +=(objetoOrigen, evento) =>
+                        ObtenerCanal().Faulted +=(objetoOrigen, evento) =>
                         CerrarSesion(cuentaInvitado.NombreJugador);
                     jugadoresActivos.TryAdd(cuentaInvitado.NombreJugador, 
                         cuentaInvitado);
@@ -1169,7 +1174,7 @@ namespace Servicios
         private void LiberarCallbackActual(string nombreJugador)
         {
             if (jugadoresActivos.TryGetValue(nombreJugador, out CuentaJugador jugador) &&
-                jugador.ContextoOperacion?.Channel == OperationContext.Current?.Channel)
+                jugador.ContextoOperacion.ObtenerCanal() == OperationContext.Current.ObtenerCanal())
             {
                 jugador.ContextoOperacion = null;
                 jugador.TipoInterfazCallback = typeof(IServicioJugadorCallback);

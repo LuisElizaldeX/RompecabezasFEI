@@ -1,4 +1,4 @@
-﻿using System.ServiceModel;
+﻿using CoreWCF;
 using Logica;
 using Logica.Enumeraciones;
 
@@ -33,6 +33,11 @@ namespace Contratos
 
         [OperationContract]
         bool ExisteNombreJugadorRegistrado(string nombreJugador);
+
+        // Operación ligera (no usa la base de datos) que el cliente llama cada
+        // pocos segundos para darse cuenta de que el servidor se cayó
+        [OperationContract]
+        bool ComprobarConexion();
     }
     
     [ServiceContract]
