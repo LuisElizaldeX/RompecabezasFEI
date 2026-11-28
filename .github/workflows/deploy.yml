@@ -1,0 +1,93 @@
+# Despliegue continuo: cuando la CI pasa en master, publica el servidor en
+# /opt/rompecabezasfei y reinicia el servicio de systemd. Si después del
+# reinicio el servidor no responde, regresa a la versión anterior.
+# Corre en el runner del homelab (etiqueta "rompecabezas").
+# Ver ServidorRompecabezasFei/Despliegue/GITHUB-ACTIONS.md
+
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Nunca dos despliegues a la vez, y uno en curso no se cancela
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: 1
+  CARPETA_SERVIDOR: /opt/rompecabezasfei
+  SERVICIO: rompecabezasfei
+  PUERTO: 8089
+
+jobs:
+  desplegar:
+    # Solo si la CI pasó en un push a master, o si se lanza a mano
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+    runs-on: [self-hosted, rompecabezas]
+    timeout-minutes: 20
+
+    steps:
+      - name: Descargar el código que pasó la CI
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Publicar el servidor
+        run: >-
+          dotnet publish ServidorRompecabezasFei/Servidor/Servidor.csproj
+          -c Release -o "$RUNNER_TEMP/publicado"
+
+      - name: Compilar la herramienta de prueba
+        run: dotnet build Herramientas/PruebaConexion/PruebaConexion.csproj -c Release
+
+      - name: Respaldar la versión actual
+        run: |
+          mkdir -p "$HOME/rompecabezasfei-respaldo"
+          rsync -a --delete --exclude 'Registros/' \
+            "$CARPETA_SERVIDOR/" "$HOME/rompecabezasfei-respaldo/"
+
+      - name: Instalar la versión nueva y reiniciar el servicio
+        run: |
+          sudo systemctl stop "$SERVICIO"
+          rsync -a --delete --exclude 'Registros/' \
+            "$RUNNER_TEMP/publicado/" "$CARPETA_SERVIDOR/"
+          sudo systemctl start "$SERVICIO"
+
+      - name: Comprobar que el servidor responde
+        run: |
+          for intento in $(seq 1 30); do
+            if systemctl is-active --quiet "$SERVICIO" && \
+               (exec 3<>"/dev/tcp/127.0.0.1/$PUERTO") 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          systemctl is-active "$SERVICIO"
+          dotnet run --project Herramientas/PruebaConexion -c Release --no-build \
+            -- 127.0.0.1 "$PUERTO"
+
+      - name: Regresar a la versión anterior si algo falló
+        if: failure()
+        run: |
+          echo "::warning::El despliegue falló; se restaura la versión anterior"
+          journalctl -u "$SERVICIO" -n 50 --no-pager || true
+          sudo systemctl stop "$SERVICIO" || true
+          rsync -a --delete --exclude 'Registros/' \
+            "$HOME/rompecabezasfei-respaldo/" "$CARPETA_SERVIDOR/"
+          sudo systemctl start "$SERVICIO"
+
+      - name: Limpiar
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/publicado"

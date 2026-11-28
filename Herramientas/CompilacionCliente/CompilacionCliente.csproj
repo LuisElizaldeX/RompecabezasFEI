@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Compila el cliente WPF (.NET Framework 4.7.2) en Linux para que la CI
+    verifique que el cliente no tenga errores de compilación.
+    No reemplaza a RompecabezasFeiCliente.sln: el juego se sigue compilando
+    y ejecutando en Windows con Visual Studio. El .exe que genera este
+    proyecto no se usa para jugar.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net472</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <RootNamespace>RompecabezasFei</RootNamespace>
+    <AssemblyName>RompecabezasFei</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>7.3</LangVersion>
+    <RaizCliente>$(MSBuildThisFileDirectory)../../ClienteRompecabezasFei/</RaizCliente>
+  </PropertyGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="$(RaizCliente)RompecabezasFei/App.xaml" />
+    <Page Include="$(RaizCliente)RompecabezasFei/*.xaml" Exclude="$(RaizCliente)RompecabezasFei/App.xaml" />
+    <Compile Include="$(RaizCliente)RompecabezasFei/**/*.cs"
+             Exclude="$(RaizCliente)RompecabezasFei/obj/**;$(RaizCliente)RompecabezasFei/bin/**" />
+    <Compile Include="$(RaizCliente)Dominio/*.cs;$(RaizCliente)Seguridad/*.cs;$(RaizCliente)Registros/*.cs" />
+    <EmbeddedResource Include="$(RaizCliente)RompecabezasFei/Properties/*.resx" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Configuration" />
+    <PackageReference Include="log4net" Version="3.3.0" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" />
+  </ItemGroup>
+</Project>
