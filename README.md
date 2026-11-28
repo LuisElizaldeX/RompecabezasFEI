@@ -108,8 +108,11 @@ RompecabezasFEI/
 │   ├── Directory.Build.props        Propiedades comunes (net10.0)
 │   └── Directory.Packages.props     Versiones de los paquetes NuGet
 │
+├── .github/workflows/                CI (compila y prueba) y Deploy (actualiza el servidor) en el runner del homelab
+│
 └── Herramientas/
-    └── PruebaConexion/              Consola que prueba el servidor y sus callbacks desde la red
+    ├── PruebaConexion/              Consola que prueba el servidor y sus callbacks desde la red
+    └── CompilacionCliente/          Compila el cliente WPF en Linux para la CI
 ```
 
 Dependencias entre los proyectos del servidor:
@@ -150,6 +153,12 @@ Abre `ClienteRompecabezasFei/RompecabezasFeiCliente.sln` en Visual Studio
 `net.tcp://localhost:8089/Contratos`. Para jugar contra un servidor en otro
 equipo, cambia `localhost` por la IP del servidor en `App.config` (o en
 `RompecabezasFei.exe.config` del juego compilado).
+
+### CI/CD
+
+Cada push a `master` compila el servidor y el cliente y prueba los callbacks
+con GitHub Actions en un runner del propio servidor. Si todo pasa, actualiza
+el servidor. Ver [Despliegue/GITHUB-ACTIONS.md](ServidorRompecabezasFei/Despliegue/GITHUB-ACTIONS.md).
 
 ### Probar la conexión sin abrir el juego
 

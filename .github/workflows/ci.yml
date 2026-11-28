@@ -1,0 +1,93 @@
+# Integración continua: comprueba que los cambios compilan y que el servidor
+# sigue respondiendo con callbacks antes de llegar a master.
+# Corre en el runner del homelab (etiqueta "rompecabezas"), así que no gasta
+# minutos de GitHub. Ver ServidorRompecabezasFei/Despliegue/GITHUB-ACTIONS.md
+
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: 1
+  # Puerto del servidor de prueba (el real usa el 8089)
+  PUERTO_PRUEBA: 18089
+
+jobs:
+  compilar-y-probar:
+    # El repositorio es público: nunca ejecutar en el servidor código de un
+    # pull request que venga de un fork
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, rompecabezas]
+    timeout-minutes: 20
+
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Versión de .NET
+        run: dotnet --info | head -n 20
+
+      - name: Compilar el servidor
+        run: dotnet build ServidorRompecabezasFei/RompecabezasFeiServidor.sln -c Release
+
+      - name: Compilar el cliente (verificación en Linux)
+        run: dotnet build Herramientas/CompilacionCliente/CompilacionCliente.csproj -c Release
+
+      - name: Compilar la herramienta de prueba
+        run: dotnet build Herramientas/PruebaConexion/PruebaConexion.csproj -c Release
+
+      - name: Publicar un servidor de prueba
+        run: >-
+          dotnet publish ServidorRompecabezasFei/Servidor/Servidor.csproj
+          -c Release -o "$RUNNER_TEMP/servidor-ci"
+
+      - name: Levantar el servidor de prueba
+        env:
+          DOTNET_ENVIRONMENT: Production
+          ROMPECABEZAS_Servidor__Puerto: ${{ env.PUERTO_PRUEBA }}
+          ROMPECABEZAS_BaseDatos__Contrasena: ${{ secrets.BD_CONTRASENA }}
+        run: |
+          cd "$RUNNER_TEMP/servidor-ci"
+          nohup dotnet Servidor.dll > servidor.log 2>&1 &
+          echo $! > servidor.pid
+          for intento in $(seq 1 30); do
+            if grep -q "Servidor operacional" servidor.log; then
+              echo "El servidor de prueba arrancó"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::El servidor de prueba no arrancó en 30 segundos"
+          cat servidor.log
+          exit 1
+
+      - name: Prueba de humo (salas, chat y desconexiones)
+        run: >-
+          dotnet run --project Herramientas/PruebaConexion -c Release --no-build
+          -- 127.0.0.1 "$PUERTO_PRUEBA"
+
+      - name: Detener el servidor de prueba
+        if: always()
+        run: |
+          cd "$RUNNER_TEMP/servidor-ci" 2>/dev/null || exit 0
+          if [ -f servidor.pid ]; then
+            kill "$(cat servidor.pid)" 2>/dev/null || true
+          fi
+          echo "----- registro del servidor de prueba -----"
+          cat servidor.log 2>/dev/null || true
+          rm -rf "$RUNNER_TEMP/servidor-ci"
